@@ -205,13 +205,13 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-12 px-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-6 sm:py-12 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
         {/* Progress Bar */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Step {step} of 4</span>
-            <span className="text-sm font-medium text-gray-700">{Math.round((step / 4) * 100)}%</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Step {step} of 4</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">{Math.round((step / 4) * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
@@ -221,23 +221,23 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 md:p-8">
           {/* Step 1: RIASEC Test */}
           {step === 1 && (
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Personality Test</h2>
-              <p className="text-gray-600 mb-8">Answer these questions to discover your Holland Code (RIASEC) type</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Personality Test</h2>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Answer these questions to discover your Holland Code (RIASEC) type</p>
               
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {RIASEC_QUESTIONS.map((q) => (
-                  <div key={q.id} className="border-b pb-6">
-                    <p className="text-lg font-medium text-gray-800 mb-4">{q.question}</p>
-                    <div className="flex gap-2">
+                  <div key={q.id} className="border-b pb-4 sm:pb-6">
+                    <p className="text-base sm:text-lg font-medium text-gray-800 mb-3 sm:mb-4">{q.question}</p>
+                    <div className="flex flex-col sm:flex-row gap-2">
                       {[1, 2, 3, 4, 5].map((value) => (
                         <button
                           key={value}
                           onClick={() => handleRiasecAnswer(q.id, value)}
-                          className={`flex-1 py-3 px-2 rounded-lg border-2 transition text-sm ${
+                          className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-3 rounded-lg border-2 transition text-xs sm:text-sm ${
                             riasecAnswers[q.id] === value
                               ? 'border-blue-600 bg-blue-50 text-blue-700 font-semibold'
                               : 'border-gray-200 hover:border-gray-300'
@@ -260,25 +260,25 @@ export default function OnboardingPage() {
           {/* Step 2: Skills and Certificates */}
           {step === 2 && (
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Skills & Certificates</h2>
-              <p className="text-gray-600 mb-8">Tell us about your skills and certifications</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Skills & Certificates</h2>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Tell us about your skills and certifications</p>
               
-              <div className="space-y-8">
+              <div className="space-y-6 sm:space-y-8">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Your Skills</label>
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex flex-col sm:flex-row gap-2 mb-4">
                     <input
                       type="text"
                       value={newSkill}
                       onChange={(e) => setNewSkill(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                       placeholder="e.g., JavaScript, Python, React"
                     />
                     <button
                       type="button"
                       onClick={addSkill}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
                     >
                       Add
                     </button>
@@ -303,19 +303,19 @@ export default function OnboardingPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Your Certificates</label>
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex flex-col sm:flex-row gap-2 mb-4">
                     <input
                       type="text"
                       value={newCertificate}
                       onChange={(e) => setNewCertificate(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCertificate())}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                       placeholder="e.g., AWS Certified Solutions Architect"
                     />
                     <button
                       type="button"
                       onClick={addCertificate}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
                     >
                       Add
                     </button>
@@ -344,14 +344,14 @@ export default function OnboardingPage() {
           {/* Step 3: CV and LinkedIn */}
           {step === 3 && (
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Resume & LinkedIn</h2>
-              <p className="text-gray-600 mb-8">Upload your CV/Resume and add your LinkedIn profile (optional)</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Resume & LinkedIn</h2>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Upload your CV/Resume and add your LinkedIn profile (optional)</p>
               
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-3">Upload CV/Resume</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center">
+                    <Upload className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-4" />
                     <input
                       type="file"
                       accept=".pdf,.doc,.docx"
@@ -361,12 +361,12 @@ export default function OnboardingPage() {
                     />
                     <label
                       htmlFor="cv-upload"
-                      className="cursor-pointer inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="cursor-pointer inline-block px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base"
                     >
                       Choose File
                     </label>
                     {cvFile && (
-                      <p className="mt-4 text-sm text-gray-600">{cvFile.name}</p>
+                      <p className="mt-4 text-xs sm:text-sm text-gray-600 break-words">{cvFile.name}</p>
                     )}
                   </div>
                 </div>
@@ -391,15 +391,15 @@ export default function OnboardingPage() {
           {/* Step 4: Job Interests */}
           {step === 4 && (
             <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Job Interests</h2>
-              <p className="text-gray-600 mb-8">Select the types of jobs you're interested in</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Job Interests</h2>
+              <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Select the types of jobs you're interested in</p>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {JOB_INTERESTS.map((interest) => (
                   <button
                     key={interest}
                     onClick={() => toggleJobInterest(interest)}
-                    className={`py-3 px-4 rounded-lg border-2 transition ${
+                    className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border-2 transition text-sm sm:text-base ${
                       jobInterests.includes(interest)
                         ? 'border-blue-600 bg-blue-50 text-blue-700'
                         : 'border-gray-200 hover:border-gray-300'
@@ -413,17 +413,17 @@ export default function OnboardingPage() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-8 border-t">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 mt-6 sm:mt-8 pt-6 sm:pt-8 border-t">
             <button
               onClick={() => setStep(step - 1)}
               disabled={step === 1}
-              className={`px-6 py-3 rounded-lg flex items-center gap-2 ${
+              className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
                 step === 1
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               Previous
             </button>
             
@@ -431,27 +431,27 @@ export default function OnboardingPage() {
               <button
                 onClick={() => setStep(step + 1)}
                 disabled={!canProceed()}
-                className={`px-6 py-3 rounded-lg flex items-center gap-2 ${
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
                   canProceed()
                     ? 'bg-blue-600 text-white hover:bg-blue-700'
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 }`}
               >
                 Next
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             ) : (
               <button
                 onClick={handleComplete}
                 disabled={!canProceed()}
-                className={`px-6 py-3 rounded-lg flex items-center gap-2 ${
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base ${
                   canProceed()
                     ? 'bg-green-600 text-white hover:bg-green-700'
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 }`}
               >
                 Complete
-                <ArrowRight className="w-5 h-5" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
           </div>

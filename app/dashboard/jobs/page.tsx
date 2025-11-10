@@ -163,40 +163,40 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="min-h-screen py-8 px-6">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
 
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Job Recommendations</h1>
-          <p className="text-gray-600">Based on your RIASEC type ({userProfile.riasecType}) and interests</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Job Recommendations</h1>
+          <p className="text-sm sm:text-base text-gray-600">Based on your RIASEC type ({userProfile.riasecType}) and interests</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {recommendedJobs.map((job, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{job.title}</h2>
-                  <p className="text-gray-600">{job.description}</p>
+            <div key={index} className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 hover:shadow-xl transition">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4 mb-4">
+                <div className="flex-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{job.title}</h2>
+                  <p className="text-sm sm:text-base text-gray-600">{job.description}</p>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-2 text-green-600 font-semibold mb-2">
-                    <DollarSign className="w-5 h-5" />
+                <div className="text-left sm:text-right">
+                  <div className="flex items-center gap-2 text-green-600 font-semibold mb-2 text-sm sm:text-base">
+                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
                     {job.salary}
                   </div>
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Briefcase className="w-5 h-5" />
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
                     Key Responsibilities
                   </h3>
                   <ul className="space-y-2">
                     {job.responsibilities.map((resp: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-gray-600">
-                        <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600">
+                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <span>{resp}</span>
                       </li>
                     ))}
@@ -204,25 +204,25 @@ export default function JobsPage() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" />
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                     Required Skills
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {job.skills.map((skill: string, i: number) => (
-                      <span key={i} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                      <span key={i} className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm">
                         {skill}
                       </span>
                     ))}
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 mb-3 mt-6 flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
+                  <h3 className="font-semibold text-gray-900 mb-3 mt-4 sm:mt-6 flex items-center gap-2 text-sm sm:text-base">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                     Recommended Companies
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {job.companies.map((company: string, i: number) => (
-                      <span key={i} className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
+                      <span key={i} className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm">
                         {company}
                       </span>
                     ))}
@@ -234,8 +234,8 @@ export default function JobsPage() {
         </div>
 
         {recommendedJobs.length === 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <p className="text-gray-600 text-lg">No job recommendations available. Please complete your profile.</p>
+          <div className="bg-white rounded-xl shadow-lg p-8 sm:p-12 text-center">
+            <p className="text-sm sm:text-base md:text-lg text-gray-600">No job recommendations available. Please complete your profile.</p>
           </div>
         )}
       </div>

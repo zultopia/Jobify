@@ -313,18 +313,27 @@ export default function DashboardLayout({
         isMobile
           ? 'ml-0'
           : sidebarOpen
-          ? 'md:ml-64'
-          : 'md:ml-20'
+          ? 'ml-64'
+          : 'ml-20'
       }`}>
         {/* Mobile Header */}
-        <header className="md:hidden bg-white shadow-sm p-4 flex items-center justify-between sticky top-0 z-30">
+        <header className="md:hidden bg-white shadow-sm p-3 sm:p-4 flex items-center justify-between sticky top-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 hover:bg-gray-100 rounded-lg"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
-          <div className="text-xl font-bold text-blue-600">Jobify</div>
+          <Link href="/dashboard" className="flex items-center">
+            <Image 
+              src="/assets/Jobify.png" 
+              alt="Jobify Logo" 
+              width={120} 
+              height={120}
+              className="h-8 w-auto"
+              priority
+            />
+          </Link>
           <div className="w-10" />
         </header>
 

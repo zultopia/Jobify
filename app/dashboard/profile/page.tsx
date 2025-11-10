@@ -149,19 +149,19 @@ export default function ProfilePage() {
   const profile = isEditing ? editedProfile : userProfile
 
   return (
-    <div className="min-h-screen py-8 px-6">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Profile</h1>
-          <p className="text-gray-600">Manage your profile information</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Profile</h1>
+          <p className="text-sm sm:text-base text-gray-600">Manage your profile information</p>
         </div>
 
         {/* Profile Header */}
-        <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center gap-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full">
               <div className="relative">
-                <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
                   {photoPreview || userProfile?.photo ? (
                     <img 
                       src={photoPreview || userProfile?.photo} 
@@ -169,13 +169,13 @@ export default function ProfilePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-12 h-12 text-blue-600" />
+                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600" />
                   )}
                 </div>
                 {isEditing && (
                   <div className="absolute bottom-0 right-0 flex gap-1">
-                    <label className="cursor-pointer bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition">
-                      <Upload className="w-4 h-4" />
+                    <label className="cursor-pointer bg-blue-600 text-white p-1.5 sm:p-2 rounded-full hover:bg-blue-700 transition">
+                      <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                       <input
                         type="file"
                         accept="image/*"
@@ -194,27 +194,27 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                   {isEditing ? (
                     <input
                       type="text"
                       value={profile.name || ''}
                       onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
-                      className="border border-gray-300 rounded-lg px-3 py-2 text-2xl font-bold"
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-lg sm:text-xl md:text-2xl font-bold w-full"
                       placeholder="Your Name"
                     />
                   ) : (
                     profile.name || 'User'
                   )}
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                   {isEditing ? (
                     <input
                       type="email"
                       value={profile.email || ''}
                       onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
-                      className="border border-gray-300 rounded-lg px-3 py-2"
+                      className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm sm:text-base"
                       placeholder="your.email@example.com"
                     />
                   ) : (
@@ -226,23 +226,23 @@ export default function ProfilePage() {
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm sm:text-base w-full sm:w-auto"
               >
                 <Edit2 className="w-4 h-4" />
                 Edit Profile
               </button>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <button
                   onClick={handleSave}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm sm:text-base"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Save
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                  className="px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
                 >
                   Cancel
                 </button>
@@ -252,17 +252,17 @@ export default function ProfilePage() {
         </div>
 
         {/* RIASEC Type */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-blue-600" />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             RIASEC Personality Type
           </h3>
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center">
-              <span className="text-2xl font-bold text-blue-600">{profile.riasecType || 'N/A'}</span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-xl sm:text-2xl font-bold text-blue-600">{profile.riasecType || 'N/A'}</span>
             </div>
-            <div>
-              <p className="text-gray-700 font-medium">
+            <div className="flex-1">
+              <p className="text-sm sm:text-base text-gray-700 font-medium">
                 {profile.riasecType === 'R' && 'Realistic - Hands-on, practical, and enjoys working with tools'}
                 {profile.riasecType === 'I' && 'Investigative - Analytical, curious, and enjoys research'}
                 {profile.riasecType === 'A' && 'Artistic - Creative, expressive, and enjoys artistic activities'}
@@ -276,9 +276,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Skills */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-green-600" />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
             Skills
           </h3>
           {isEditing ? (
@@ -336,9 +336,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Job Interests */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Briefcase className="w-5 h-5 text-purple-600" />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
             Job Interests
           </h3>
           {isEditing ? (
@@ -396,9 +396,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Certificates */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Award className="w-5 h-5 text-orange-600" />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
             Certificates
           </h3>
           {isEditing ? (
@@ -457,9 +457,9 @@ export default function ProfilePage() {
         </div>
 
         {/* LinkedIn URL */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <LinkIcon className="w-5 h-5 text-blue-600" />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             LinkedIn Profile
           </h3>
           {isEditing ? (
@@ -467,7 +467,7 @@ export default function ProfilePage() {
               type="url"
               value={profile.linkedinUrl || ''}
               onChange={(e) => setEditedProfile({ ...editedProfile, linkedinUrl: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base"
               placeholder="https://linkedin.com/in/yourprofile"
             />
           ) : (
@@ -477,31 +477,31 @@ export default function ProfilePage() {
                   href={profile.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline flex items-center gap-2"
+                  className="text-blue-600 hover:underline flex items-center gap-2 text-sm sm:text-base break-all"
                 >
-                  <LinkIcon className="w-4 h-4" />
-                  {profile.linkedinUrl}
+                  <LinkIcon className="w-4 h-4 flex-shrink-0" />
+                  <span className="break-all">{profile.linkedinUrl}</span>
                 </a>
               ) : (
-                <p className="text-gray-500">No LinkedIn URL provided</p>
+                <p className="text-sm sm:text-base text-gray-500">No LinkedIn URL provided</p>
               )}
             </div>
           )}
         </div>
 
         {/* CV Status */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-gray-600" />
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             Resume/CV
           </h3>
           {profile.cvFile ? (
             <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="text-gray-700">CV uploaded successfully</span>
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+              <span className="text-sm sm:text-base text-gray-700">CV uploaded successfully</span>
             </div>
           ) : (
-            <p className="text-gray-500">No CV uploaded yet</p>
+            <p className="text-sm sm:text-base text-gray-500">No CV uploaded yet</p>
           )}
         </div>
       </div>

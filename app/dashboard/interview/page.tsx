@@ -342,20 +342,20 @@ export default function InterviewPage() {
   const report = showReport ? generateReport() : null
 
   return (
-    <div className="min-h-screen py-8 px-6">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
 
         {!isInterviewing && !showReport && (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <Video className="w-16 h-16 text-blue-600 mx-auto mb-6" />
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Practice Interview</h1>
-            <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+          <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 md:p-12 text-center">
+            <Video className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600 mx-auto mb-4 sm:mb-6" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Practice Interview</h1>
+            <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
               Practice your interview skills with AI-powered mock interviews. You'll be asked common interview questions 
               and receive detailed feedback on your performance.
             </p>
             <button
               onClick={startInterview}
-              className="px-8 py-4 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+              className="px-6 sm:px-8 py-3 sm:py-4 bg-blue-600 text-white rounded-lg text-base sm:text-lg font-semibold hover:bg-blue-700 transition"
             >
               Start Interview
             </button>
@@ -363,11 +363,11 @@ export default function InterviewPage() {
         )}
 
         {isInterviewing && (
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="grid md:grid-cols-2 gap-8">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
               {/* Video Feed */}
               <div>
-                <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video mb-4">
+                <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video mb-3 sm:mb-4">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -377,13 +377,13 @@ export default function InterviewPage() {
                   />
                   {!isRecording && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white">
-                      <VideoOff className="w-16 h-16" />
+                      <VideoOff className="w-12 h-12 sm:w-16 sm:h-16" />
                     </div>
                   )}
                 </div>
                 {isRecording && (
-                  <div className="flex items-center justify-center gap-2 text-red-600">
-                    <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                  <div className="flex items-center justify-center gap-2 text-red-600 text-sm sm:text-base">
+                    <div className="w-2 h-2 sm:w-3 sm:h-3 bg-red-600 rounded-full animate-pulse"></div>
                     <span className="font-semibold">Recording</span>
                   </div>
                 )}
@@ -391,37 +391,37 @@ export default function InterviewPage() {
 
               {/* Question and Answer */}
               <div>
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-gray-600">
+                <div className="mb-4 sm:mb-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
+                    <span className="text-xs sm:text-sm text-gray-600">
                       Question {currentQuestionIndex + 1} of {INTERVIEW_QUESTIONS.length}
                     </span>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {isSpeaking && (
                         <div className="flex items-center gap-2 text-blue-600">
-                          <Volume2 className="w-4 h-4 animate-pulse" />
-                          <span className="text-xs">Reading question...</span>
+                          <Volume2 className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
+                          <span className="text-xs">Reading...</span>
                         </div>
                       )}
                       {questionStarted && (
                         <div className="flex items-center gap-2 text-red-600">
-                          <Clock className="w-5 h-5" />
-                          <span className="font-semibold">{formatTime(timeRemaining)}</span>
+                          <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                          <span className="font-semibold text-sm sm:text-base">{formatTime(timeRemaining)}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <h2 className="text-2xl font-bold text-gray-900 flex-1">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 flex-1">
                       {INTERVIEW_QUESTIONS[currentQuestionIndex]}
                     </h2>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
                       <button
                         onClick={replayQuestion}
-                        className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        className="p-1.5 sm:p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
                         title="Replay question"
                       >
-                        <RotateCw className="w-5 h-5" />
+                        <RotateCw className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                       <button
                         onClick={() => {
@@ -432,49 +432,49 @@ export default function InterviewPage() {
                             stopSpeaking()
                           }
                         }}
-                        className={`p-2 rounded-lg transition ${
+                        className={`p-1.5 sm:p-2 rounded-lg transition ${
                           ttsEnabled
                             ? 'text-blue-600 bg-blue-50'
                             : 'text-gray-400 hover:text-gray-600'
                         }`}
                         title={ttsEnabled ? 'Disable voice' : 'Enable voice'}
                       >
-                        {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+                        {ttsEnabled ? <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" />}
                       </button>
                     </div>
                   </div>
                 </div>
 
                 {!questionStarted ? (
-                  <div className="mb-6 p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
-                    <p className="text-gray-700 mb-4">
+                  <div className="mb-4 sm:mb-6 p-4 sm:p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+                    <p className="text-sm sm:text-base text-gray-700 mb-3 sm:mb-4">
                       Take a moment to prepare your answer. When you're ready, click "Start" to begin recording and start the timer.
                     </p>
                     <button
                       onClick={startQuestion}
-                      className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                      className="w-full px-4 sm:px-6 py-3 sm:py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
-                      <Play className="w-5 h-5" />
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                       Start Answering
                     </button>
                   </div>
                 ) : (
-                  <div className="mb-6">
-                    <div className="p-6 bg-green-50 rounded-lg border-2 border-green-200 mb-4">
-                      <div className="flex items-center gap-3 mb-2">
+                  <div className="mb-4 sm:mb-6">
+                    <div className="p-4 sm:p-6 bg-green-50 rounded-lg border-2 border-green-200 mb-3 sm:mb-4">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2">
                         {isAudioRecording ? (
                           <>
-                            <Mic className="w-6 h-6 text-red-600 animate-pulse" />
-                            <span className="font-semibold text-gray-900">Recording your answer...</span>
+                            <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 animate-pulse" />
+                            <span className="font-semibold text-gray-900 text-sm sm:text-base">Recording your answer...</span>
                           </>
                         ) : (
                           <>
-                            <MicOff className="w-6 h-6 text-gray-400" />
-                            <span className="text-gray-600">Microphone ready</span>
+                            <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
+                            <span className="text-gray-600 text-sm sm:text-base">Microphone ready</span>
                           </>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs sm:text-sm text-gray-600">
                         Speak clearly into your microphone. Your answer is being recorded.
                       </p>
                     </div>
@@ -482,18 +482,18 @@ export default function InterviewPage() {
                 )}
 
                 {questionStarted && (
-                  <div className="flex gap-4">
+                  <div className="flex gap-3 sm:gap-4">
                     {currentQuestionIndex < INTERVIEW_QUESTIONS.length - 1 ? (
                       <button
                         onClick={handleNextQuestion}
-                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                        className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
                       >
                         Next Question
                       </button>
                     ) : (
                       <button
                         onClick={finishInterview}
-                        className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition"
+                        className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition text-sm sm:text-base"
                       >
                         Finish Interview
                       </button>
@@ -506,78 +506,78 @@ export default function InterviewPage() {
         )}
 
         {showReport && report && (
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Interview Report</h2>
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-6">Interview Report</h2>
             
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-blue-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Completion Rate</h3>
-                <div className="text-4xl font-bold text-blue-600">{report.completionRate.toFixed(0)}%</div>
-                <p className="text-sm text-gray-600 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <div className="bg-blue-50 rounded-lg p-4 sm:p-6">
+                <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Completion Rate</h3>
+                <div className="text-3xl sm:text-4xl font-bold text-blue-600">{report.completionRate.toFixed(0)}%</div>
+                <p className="text-xs sm:text-sm text-gray-600 mt-2">
                   {report.answeredQuestions} of {report.totalQuestions} questions answered
                 </p>
               </div>
 
-              <div className="bg-green-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-900 mb-2">Overall Score</h3>
-                <div className="text-4xl font-bold text-green-600">{report.analysis.overallScore.toFixed(0)}/100</div>
-                <p className="text-sm text-gray-600 mt-2">AI Analysis Score</p>
+              <div className="bg-green-50 rounded-lg p-4 sm:p-6">
+                <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">Overall Score</h3>
+                <div className="text-3xl sm:text-4xl font-bold text-green-600">{report.analysis.overallScore.toFixed(0)}/100</div>
+                <p className="text-xs sm:text-sm text-gray-600 mt-2">AI Analysis Score</p>
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                   Strengths
                 </h3>
                 <ul className="space-y-2">
                   {report.analysis.strengths.map((strength, i) => (
-                    <li key={i} className="text-gray-700 pl-8">• {strength}</li>
+                    <li key={i} className="text-sm sm:text-base text-gray-700 pl-6 sm:pl-8">• {strength}</li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <XCircle className="w-6 h-6 text-orange-600" />
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
                   Areas for Improvement
                 </h3>
                 <ul className="space-y-2">
                   {report.analysis.areasForImprovement.map((area, i) => (
-                    <li key={i} className="text-gray-700 pl-8">• {area}</li>
+                    <li key={i} className="text-sm sm:text-base text-gray-700 pl-6 sm:pl-8">• {area}</li>
                   ))}
                 </ul>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Movement Analysis</h3>
-                <p className="text-gray-700">{report.analysis.movementAnalysis}</p>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Movement Analysis</h3>
+                <p className="text-sm sm:text-base text-gray-700">{report.analysis.movementAnalysis}</p>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Answer Quality</h3>
-                <p className="text-gray-700">{report.analysis.answerQuality}</p>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Answer Quality</h3>
+                <p className="text-sm sm:text-base text-gray-700">{report.analysis.answerQuality}</p>
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Recommendations</h3>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Recommendations</h3>
                 <ul className="space-y-2">
                   {report.analysis.recommendations.map((rec, i) => (
-                    <li key={i} className="text-gray-700 pl-8">• {rec}</li>
+                    <li key={i} className="text-sm sm:text-base text-gray-700 pl-6 sm:pl-8">• {rec}</li>
                   ))}
                 </ul>
               </div>
             </div>
 
-            <div className="mt-8 flex gap-4">
+            <div className="mt-6 sm:mt-8 flex gap-3 sm:gap-4">
               <button
                 onClick={() => {
                   setShowReport(false)
                   setAnswers([])
                   setCurrentQuestionIndex(0)
                 }}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+                className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
               >
                 Practice Again
               </button>
