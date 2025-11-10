@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { User, Mail, Briefcase, Award, BookOpen, Link as LinkIcon, FileText, Edit2, CheckCircle, Upload, X as XIcon } from 'lucide-react'
 
@@ -10,8 +10,11 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<any>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvPreview, setCvPreview] = useState<string | null>(null)
+  const [cvFileName, setCvFileName] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadProfile = useCallback(() => {
     // Check if user is logged in
     const user = localStorage.getItem('user')
     if (!user) {
@@ -66,7 +69,26 @@ export default function ProfilePage() {
     if (parsed.photo) {
       setPhotoPreview(parsed.photo)
     }
+    if (parsed.cvFile) {
+      setCvPreview(parsed.cvFile)
+      setCvFileName(parsed.cvFileName || 'Resume.pdf')
+    }
   }, [router])
+
+  useEffect(() => {
+    loadProfile()
+    
+    // Listen for profile updates (e.g., after retaking test)
+    const handleProfileUpdate = (event: CustomEvent) => {
+      loadProfile()
+    }
+    
+    window.addEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    }
+  }, [loadProfile])
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -99,6 +121,94 @@ export default function ProfilePage() {
     setEditedProfile({ ...editedProfile, photo: null })
   }
 
+  const handleCVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) {
+      return
+    }
+    
+    // Validate file type (PDF, DOC, DOCX, or images)
+    const validTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg',
+      'image/jpg',
+      'image/png'
+    ]
+    
+    // Check file extension as fallback
+    const fileExtension = file.name.split('.').pop()?.toLowerCase()
+    const validExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
+    
+    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension || '')) {
+      alert('Please upload a PDF, DOC, DOCX, JPG, or PNG file')
+      // Reset input
+      e.target.value = ''
+      return
+    }
+    
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size should be less than 10MB')
+      // Reset input
+      e.target.value = ''
+      return
+    }
+    
+    // Clean up previous blob URL if exists
+    if (cvPreview && cvPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(cvPreview)
+    }
+    
+    setCvFile(file)
+    setCvFileName(file.name)
+    
+    // Read file as base64 for storage
+    const reader = new FileReader()
+    reader.onerror = () => {
+      alert('Error reading file. Please try again.')
+      e.target.value = ''
+    }
+    reader.onloadend = () => {
+      const base64String = reader.result as string
+      
+      if (!base64String) {
+        alert('Error reading file. Please try again.')
+        return
+      }
+      
+      // For PDF, create blob URL for preview (better performance)
+      if (file.type === 'application/pdf' || fileExtension === 'pdf') {
+        const objectUrl = URL.createObjectURL(file)
+        setCvPreview(objectUrl)
+      } else {
+        // For images and other files, use base64 for preview
+        setCvPreview(base64String)
+      }
+      
+      // Store base64 in editedProfile for saving
+      setEditedProfile({ 
+        ...editedProfile, 
+        cvFile: base64String, 
+        cvFileName: file.name, 
+        cvFileType: file.type || `application/${fileExtension}` 
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveCV = () => {
+    // Clean up object URL if it exists
+    if (cvPreview && cvPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(cvPreview)
+    }
+    setCvFile(null)
+    setCvPreview(null)
+    setCvFileName(null)
+    setEditedProfile({ ...editedProfile, cvFile: null, cvFileName: null, cvFileType: null })
+  }
+
   const handleSave = () => {
     // Get user email to preserve it
     const user = localStorage.getItem('user')
@@ -108,6 +218,11 @@ export default function ProfilePage() {
     if (!email) {
       alert('Email is required')
       return
+    }
+
+    // Clean up blob URL if exists (we'll use base64 for storage)
+    if (cvPreview && cvPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(cvPreview)
     }
 
     const updatedProfile = { 
@@ -120,6 +235,13 @@ export default function ProfilePage() {
       updatedProfile.photo = photoPreview
     }
     
+    // Save CV file if uploaded (base64 is already stored in editedProfile.cvFile)
+    if (editedProfile.cvFile) {
+      updatedProfile.cvFile = editedProfile.cvFile
+      updatedProfile.cvFileName = editedProfile.cvFileName || cvFileName
+      updatedProfile.cvFileType = editedProfile.cvFileType
+    }
+    
     // Save to current session
     localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
     
@@ -129,8 +251,11 @@ export default function ProfilePage() {
     profiles[email] = updatedProfile
     localStorage.setItem('userProfiles', JSON.stringify(profiles))
     
+    // Update state with saved profile (use base64 for preview)
     setUserProfile(updatedProfile)
     setEditedProfile(updatedProfile)
+    setCvPreview(updatedProfile.cvFile || null)
+    setCvFile(null)
     setIsEditing(false)
     // Dispatch custom event to update sidebar
     window.dispatchEvent(new CustomEvent('profileUpdated', { detail: updatedProfile }))
@@ -139,6 +264,13 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setEditedProfile(userProfile)
     setPhotoPreview(userProfile?.photo || null)
+    // Clean up CV preview object URL if it exists
+    if (cvPreview && cvPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(cvPreview)
+    }
+    setCvFile(null)
+    setCvPreview(userProfile?.cvFile || null)
+    setCvFileName(userProfile?.cvFileName || null)
     setIsEditing(false)
   }
 
@@ -149,19 +281,47 @@ export default function ProfilePage() {
   const profile = isEditing ? editedProfile : userProfile
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Profile</h1>
-          <p className="text-sm sm:text-base text-gray-600">Manage your profile information</p>
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">My Profile</h1>
+              <p className="text-sm sm:text-base text-gray-600">Manage and update your profile information</p>
+            </div>
+            {!isEditing && (
+              <button
+                onClick={() => {
+                  setIsEditing(true)
+                  // Ensure CV state is properly initialized when entering edit mode
+                  if (userProfile?.cvFile) {
+                    setCvPreview(userProfile.cvFile)
+                    setCvFileName(userProfile.cvFileName || 'Resume.pdf')
+                  } else {
+                    setCvPreview(null)
+                    setCvFileName(null)
+                  }
+                }}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm hover:shadow-md active:scale-95"
+              >
+                <Edit2 className="w-4 h-4" />
+                <span>Edit</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Profile Header */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 w-full">
-              <div className="relative">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+        {/* Profile Header Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 mb-6 relative overflow-hidden">
+          {/* Decorative gradient background */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/50 to-purple-100/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          
+          <div className="relative z-10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+              {/* Profile Photo */}
+              <div className="relative group">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg ring-4 ring-white">
                   {photoPreview || userProfile?.photo ? (
                     <img 
                       src={photoPreview || userProfile?.photo} 
@@ -169,13 +329,13 @@ export default function ProfilePage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-blue-600" />
+                    <User className="w-12 h-12 sm:w-14 sm:h-14 text-white" />
                   )}
                 </div>
                 {isEditing && (
-                  <div className="absolute bottom-0 right-0 flex gap-1">
-                    <label className="cursor-pointer bg-blue-600 text-white p-1.5 sm:p-2 rounded-full hover:bg-blue-700 transition">
-                      <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <div className="absolute -bottom-1 -right-1 flex gap-1.5">
+                    <label className="cursor-pointer bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl active:scale-95">
+                      <Upload className="w-4 h-4" />
                       <input
                         type="file"
                         accept="image/*"
@@ -186,7 +346,8 @@ export default function ProfilePage() {
                     {(photoPreview || userProfile?.photo) && (
                       <button
                         onClick={handleRemovePhoto}
-                        className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition"
+                        className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-all shadow-lg hover:shadow-xl active:scale-95"
+                        title="Remove photo"
                       >
                         <XIcon className="w-4 h-4" />
                       </button>
@@ -194,228 +355,280 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* Profile Info */}
               <div className="flex-1 min-w-0">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-                  {isEditing ? (
+                <div className="mb-4">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={profile.name || ''}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
+                        className="border-2 border-blue-200 rounded-xl px-4 py-2.5 text-xl sm:text-2xl font-bold w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                        placeholder="Your Name"
+                      />
+                    ) : (
+                      profile.name || 'User'
+                    )}
+                  </h2>
+                  <div className="flex items-center gap-2 text-gray-600 mb-2">
+                    <Mail className="w-4 h-4" />
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        value={profile.email || ''}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
+                        className="flex-1 border-2 border-blue-200 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                        placeholder="your.email@example.com"
+                      />
+                    ) : (
+                      <span className="text-sm sm:text-base">{profile.email || 'Add your email'}</span>
+                    )}
+                  </div>
+                  {/* LinkedIn in Profile Header */}
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <LinkIcon className="w-4 h-4" />
+                    {isEditing ? (
+                      <input
+                        type="url"
+                        value={profile.linkedinUrl || ''}
+                        onChange={(e) => setEditedProfile({ ...editedProfile, linkedinUrl: e.target.value })}
+                        className="flex-1 border-2 border-blue-200 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                        placeholder="https://linkedin.com/in/yourprofile"
+                      />
+                    ) : (
+                      profile.linkedinUrl ? (
+                        <a
+                          href={profile.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 hover:underline text-sm sm:text-base break-all"
+                        >
+                          {profile.linkedinUrl}
+                        </a>
+                      ) : (
+                        <span className="text-sm sm:text-base text-gray-500">Add LinkedIn URL</span>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Edit Mode Actions */}
+                {isEditing && (
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <button
+                      onClick={handleSave}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all text-sm font-medium shadow-md hover:shadow-lg active:scale-95"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      Save Changes
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium active:scale-95"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid Layout for Profile Sections - Left: RIASEC (smaller), Right: Job Interests + Skills (larger) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+          {/* Left Column - RIASEC Type (smaller width) */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Briefcase className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">RIASEC Personality Type</h3>
+              </div>
+              <div className="flex flex-col items-center sm:items-start gap-4">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transform hover:scale-105 transition-transform">
+                  <span className="text-3xl font-bold text-white">{profile.riasecType || 'N/A'}</span>
+                </div>
+                <div className="w-full bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
+                  <p className="text-sm sm:text-base text-gray-800 font-medium leading-relaxed text-center sm:text-left">
+                    {profile.riasecType === 'R' && 'Realistic - Hands-on, practical, and enjoys working with tools'}
+                    {profile.riasecType === 'I' && 'Investigative - Analytical, curious, and enjoys research'}
+                    {profile.riasecType === 'A' && 'Artistic - Creative, expressive, and enjoys artistic activities'}
+                    {profile.riasecType === 'S' && 'Social - Helpful, friendly, and enjoys working with people'}
+                    {profile.riasecType === 'E' && 'Enterprising - Ambitious, persuasive, and enjoys leadership'}
+                    {profile.riasecType === 'C' && 'Conventional - Organized, detail-oriented, and enjoys structured work'}
+                    {!profile.riasecType && 'Not specified'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - Job Interests and Skills (larger width) */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Job Interests */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Briefcase className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Job Interests</h3>
+              </div>
+              {isEditing ? (
+                <div>
+                  <div className="flex flex-wrap gap-2.5 mb-4 min-h-[3rem]">
+                    {profile.jobInterests?.map((interest: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all hover:scale-105"
+                      >
+                        {interest}
+                        <button
+                          onClick={() => {
+                            const newInterests = profile.jobInterests.filter((s: string, i: number) => i !== index)
+                            setEditedProfile({ ...editedProfile, jobInterests: newInterests })
+                          }}
+                          className="text-white hover:text-red-200 transition-colors font-bold text-lg leading-none"
+                          title="Remove interest"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
                     <input
                       type="text"
-                      value={profile.name || ''}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
-                      className="border border-gray-300 rounded-lg px-3 py-2 text-lg sm:text-xl md:text-2xl font-bold w-full"
-                      placeholder="Your Name"
+                      placeholder="Type a job interest and press Enter"
+                      className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          const newInterests = [...(profile.jobInterests || []), e.currentTarget.value.trim()]
+                          setEditedProfile({ ...editedProfile, jobInterests: newInterests })
+                          e.currentTarget.value = ''
+                        }
+                      }}
                     />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2.5 min-h-[2.5rem]">
+                  {profile.jobInterests && profile.jobInterests.length > 0 ? (
+                    profile.jobInterests.map((interest: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-105 border border-purple-300/50"
+                      >
+                        {interest}
+                      </span>
+                    ))
                   ) : (
-                    profile.name || 'User'
+                    <div className="w-full py-6 text-center">
+                      <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">No job interests added yet. Click Edit to add interests.</p>
+                    </div>
                   )}
-                </h2>
-                <p className="text-sm sm:text-base text-gray-600">
-                  {isEditing ? (
+                </div>
+              )}
+            </div>
+
+            {/* Skills */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Skills</h3>
+              </div>
+              {isEditing ? (
+                <div>
+                  <div className="flex flex-wrap gap-2.5 mb-4 min-h-[3rem]">
+                    {profile.skills?.map((skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all hover:scale-105"
+                      >
+                        {skill}
+                        <button
+                          onClick={() => {
+                            const newSkills = profile.skills.filter((s: string, i: number) => i !== index)
+                            setEditedProfile({ ...editedProfile, skills: newSkills })
+                          }}
+                          className="text-white hover:text-red-200 transition-colors font-bold text-lg leading-none"
+                          title="Remove skill"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
                     <input
-                      type="email"
-                      value={profile.email || ''}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, email: e.target.value })}
-                      className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm sm:text-base"
-                      placeholder="your.email@example.com"
+                      type="text"
+                      placeholder="Type a skill and press Enter"
+                      className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          const newSkills = [...(profile.skills || []), e.currentTarget.value.trim()]
+                          setEditedProfile({ ...editedProfile, skills: newSkills })
+                          e.currentTarget.value = ''
+                        }
+                      }}
                     />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2.5 min-h-[2.5rem]">
+                  {profile.skills && profile.skills.length > 0 ? (
+                    profile.skills.map((skill: string, index: number) => (
+                      <span
+                        key={index}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-105 border border-blue-300/50"
+                      >
+                        {skill}
+                      </span>
+                    ))
                   ) : (
-                    profile.email || 'Add your email'
+                    <div className="w-full py-6 text-center">
+                      <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500 text-sm">No skills added yet. Click Edit to add skills.</p>
+                    </div>
                   )}
-                </p>
-              </div>
-            </div>
-            {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm sm:text-base w-full sm:w-auto"
-              >
-                <Edit2 className="w-4 h-4" />
-                Edit Profile
-              </button>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <button
-                  onClick={handleSave}
-                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm sm:text-base"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Save
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIASEC Type */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-            RIASEC Personality Type
-          </h3>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-xl sm:text-2xl font-bold text-blue-600">{profile.riasecType || 'N/A'}</span>
-            </div>
-            <div className="flex-1">
-              <p className="text-sm sm:text-base text-gray-700 font-medium">
-                {profile.riasecType === 'R' && 'Realistic - Hands-on, practical, and enjoys working with tools'}
-                {profile.riasecType === 'I' && 'Investigative - Analytical, curious, and enjoys research'}
-                {profile.riasecType === 'A' && 'Artistic - Creative, expressive, and enjoys artistic activities'}
-                {profile.riasecType === 'S' && 'Social - Helpful, friendly, and enjoys working with people'}
-                {profile.riasecType === 'E' && 'Enterprising - Ambitious, persuasive, and enjoys leadership'}
-                {profile.riasecType === 'C' && 'Conventional - Organized, detail-oriented, and enjoys structured work'}
-                {!profile.riasecType && 'Not specified'}
-              </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Skills */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-            Skills
-          </h3>
+        {/* Certificates - Full Width */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 mb-6 hover:shadow-xl transition-shadow">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+              <Award className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Certificates</h3>
+          </div>
           {isEditing ? (
             <div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {profile.skills?.map((skill: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-2"
-                  >
-                    {skill}
-                    <button
-                      onClick={() => {
-                        const newSkills = profile.skills.filter((s: string, i: number) => i !== index)
-                        setEditedProfile({ ...editedProfile, skills: newSkills })
-                      }}
-                      className="text-blue-700 hover:text-blue-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Add a skill"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value) {
-                      const newSkills = [...(profile.skills || []), e.currentTarget.value]
-                      setEditedProfile({ ...editedProfile, skills: newSkills })
-                      e.currentTarget.value = ''
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills && profile.skills.length > 0 ? (
-                profile.skills.map((skill: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-                  >
-                    {skill}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500">No skills added yet</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Job Interests */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-            Job Interests
-          </h3>
-          {isEditing ? (
-            <div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {profile.jobInterests?.map((interest: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm flex items-center gap-2"
-                  >
-                    {interest}
-                    <button
-                      onClick={() => {
-                        const newInterests = profile.jobInterests.filter((s: string, i: number) => i !== index)
-                        setEditedProfile({ ...editedProfile, jobInterests: newInterests })
-                      }}
-                      className="text-purple-700 hover:text-purple-900"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Add a job interest"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value) {
-                      const newInterests = [...(profile.jobInterests || []), e.currentTarget.value]
-                      setEditedProfile({ ...editedProfile, jobInterests: newInterests })
-                      e.currentTarget.value = ''
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {profile.jobInterests && profile.jobInterests.length > 0 ? (
-                profile.jobInterests.map((interest: string, index: number) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm"
-                  >
-                    {interest}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500">No job interests added yet</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Certificates */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
-            Certificates
-          </h3>
-          {isEditing ? (
-            <div>
-              <div className="space-y-2 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
                 {profile.certificates?.map((cert: string, index: number) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200 hover:shadow-md transition-all"
                   >
-                    <span className="text-gray-700">{cert}</span>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Award className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                      <span className="text-gray-800 font-medium text-sm truncate">{cert}</span>
+                    </div>
                     <button
                       onClick={() => {
                         const newCerts = profile.certificates.filter((s: string, i: number) => i !== index)
                         setEditedProfile({ ...editedProfile, certificates: newCerts })
                       }}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all font-medium text-sm ml-2 flex-shrink-0"
                     >
                       Remove
                     </button>
@@ -425,11 +638,11 @@ export default function ProfilePage() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Add a certificate"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
+                  placeholder="Type a certificate name and press Enter"
+                  className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value) {
-                      const newCerts = [...(profile.certificates || []), e.currentTarget.value]
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                      const newCerts = [...(profile.certificates || []), e.currentTarget.value.trim()]
                       setEditedProfile({ ...editedProfile, certificates: newCerts })
                       e.currentTarget.value = ''
                     }
@@ -438,70 +651,190 @@ export default function ProfilePage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {profile.certificates && profile.certificates.length > 0 ? (
                 profile.certificates.map((cert: string, index: number) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center gap-3 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200 hover:shadow-md transition-all"
                   >
-                    <Award className="w-5 h-5 text-orange-600" />
-                    <span className="text-gray-700">{cert}</span>
+                    <Award className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                    <span className="text-gray-800 font-medium text-sm">{cert}</span>
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500">No certificates added yet</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* LinkedIn URL */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-            LinkedIn Profile
-          </h3>
-          {isEditing ? (
-            <input
-              type="url"
-              value={profile.linkedinUrl || ''}
-              onChange={(e) => setEditedProfile({ ...editedProfile, linkedinUrl: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base"
-              placeholder="https://linkedin.com/in/yourprofile"
-            />
-          ) : (
-            <div>
-              {profile.linkedinUrl ? (
-                <a
-                  href={profile.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline flex items-center gap-2 text-sm sm:text-base break-all"
-                >
-                  <LinkIcon className="w-4 h-4 flex-shrink-0" />
-                  <span className="break-all">{profile.linkedinUrl}</span>
-                </a>
-              ) : (
-                <p className="text-sm sm:text-base text-gray-500">No LinkedIn URL provided</p>
+                <div className="col-span-full w-full py-8 text-center">
+                  <Award className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">No certificates added yet. Click Edit to add certificates.</p>
+                </div>
               )}
             </div>
           )}
         </div>
 
         {/* CV Status */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-            Resume/CV
-          </h3>
-          {profile.cvFile ? (
-            <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
-              <span className="text-sm sm:text-base text-gray-700">CV uploaded successfully</span>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 bg-gradient-to-br from-gray-600 to-gray-700 rounded-xl flex items-center justify-center shadow-md">
+              <FileText className="w-5 h-5 text-white" />
+            </div>
+            <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Resume/CV</h3>
+          </div>
+          {isEditing ? (
+            <div>
+              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-10 text-center mb-6 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 transition-all">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <FileText className="w-10 h-10 text-blue-600" />
+                </div>
+                <div className="mb-4">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/jpg,image/png"
+                    onChange={handleCVUpload}
+                    className="hidden"
+                    id="cv-upload"
+                  />
+                  <label
+                    htmlFor="cv-upload"
+                    className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 active:scale-95 transition-all text-sm font-semibold mb-3 shadow-lg hover:shadow-xl"
+                  >
+                    <Upload className="w-5 h-5" />
+                    <span>{cvFileName || cvPreview ? 'Change CV/Resume' : 'Upload CV/Resume'}</span>
+                  </label>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 font-medium mt-3">
+                  Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Click the button above to select a file
+                </p>
+                {(cvFileName || cvPreview || editedProfile?.cvFileName) && (
+                  <div className="mt-6 pt-6 border-t border-gray-300 flex items-center justify-center gap-3 bg-white/50 rounded-xl p-4">
+                    <FileText className="w-6 h-6 text-blue-600" />
+                    <span className="text-sm font-semibold text-gray-800">
+                      {cvFileName || editedProfile?.cvFileName || 'Resume file'}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleRemoveCV()
+                        // Reset file input
+                        const fileInput = document.getElementById('cv-upload') as HTMLInputElement
+                        if (fileInput) {
+                          fileInput.value = ''
+                        }
+                      }}
+                      type="button"
+                      className="ml-2 p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                      title="Remove CV"
+                    >
+                      <XIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* CV Preview */}
+              {cvPreview && (
+                <div className="mt-6 border-2 border-gray-200 rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-50/30">
+                  <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Preview
+                  </h4>
+                  <div className="rounded-xl overflow-hidden bg-white border-2 border-gray-200 shadow-inner">
+                    {cvPreview.startsWith('blob:') || editedProfile?.cvFileType === 'application/pdf' ? (
+                      <iframe
+                        src={cvPreview}
+                        className="w-full h-96 sm:h-[500px] border-0"
+                        title="CV Preview"
+                      />
+                    ) : editedProfile?.cvFileType?.startsWith('image/') || (cvPreview.startsWith('data:image')) ? (
+                      <div className="flex items-center justify-center p-6">
+                        <img
+                          src={cvPreview}
+                          alt="CV Preview"
+                          className="max-w-full h-auto max-h-96 sm:max-h-[500px] rounded-lg shadow-md"
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-8 sm:p-12 text-center">
+                        <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <FileText className="w-10 h-10 text-gray-400" />
+                        </div>
+                        <p className="text-base font-semibold text-gray-700 mb-2">
+                          {cvFileName || 'Resume file uploaded'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Preview not available for this file type. File is ready to be saved.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
-            <p className="text-sm sm:text-base text-gray-500">No CV uploaded yet</p>
+            <div>
+              {profile.cvFile ? (
+                <div>
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl mb-6 border border-green-200 shadow-sm">
+                    <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">CV Uploaded</p>
+                      <p className="text-xs text-gray-600">{profile.cvFileName || 'Resume.pdf'}</p>
+                    </div>
+                  </div>
+                  
+                  {/* CV Preview in view mode */}
+                  <div className="border-2 border-gray-200 rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-gray-50 to-blue-50/30">
+                    <h4 className="text-base sm:text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      Preview
+                    </h4>
+                    <div className="rounded-xl overflow-hidden bg-white border-2 border-gray-200 shadow-inner">
+                      {profile.cvFileType === 'application/pdf' || (profile.cvFile && profile.cvFile.startsWith('data:application/pdf')) ? (
+                        <iframe
+                          src={profile.cvFile}
+                          className="w-full h-96 sm:h-[500px] border-0"
+                          title="CV Preview"
+                        />
+                      ) : profile.cvFileType?.startsWith('image/') || (profile.cvFile && profile.cvFile.startsWith('data:image')) ? (
+                        <div className="flex items-center justify-center p-6">
+                          <img
+                            src={profile.cvFile}
+                            alt="CV Preview"
+                            className="max-w-full h-auto max-h-96 sm:max-h-[500px] rounded-lg shadow-md"
+                          />
+                        </div>
+                      ) : (
+                        <div className="p-8 sm:p-12 text-center">
+                          <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <FileText className="w-10 h-10 text-gray-400" />
+                          </div>
+                          <p className="text-base font-semibold text-gray-700 mb-2">
+                            {profile.cvFileName || 'Resume file'}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            Preview not available for this file type.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full py-12 text-center bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl border-2 border-dashed border-gray-300">
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-base font-medium text-gray-700 mb-1">No CV uploaded yet</p>
+                  <p className="text-sm text-gray-500">Click Edit to upload your resume/CV</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
