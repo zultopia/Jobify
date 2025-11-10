@@ -160,12 +160,37 @@ export default function OnboardingPage() {
 
   const calculateRiasecType = () => {
     const scores: Record<string, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
+    
+    // Calculate scores for each type
     RIASEC_QUESTIONS.forEach(q => {
       if (riasecAnswers[q.id]) {
         scores[q.type] += riasecAnswers[q.id]
       }
     })
-    return Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0]
+    
+    // Find the type with the highest score
+    // If there's a tie, we'll use the first one alphabetically as a tiebreaker
+    // (This ensures consistent results)
+    const sortedTypes = Object.entries(scores)
+      .sort((a, b) => {
+        // First sort by score (descending)
+        if (b[1] !== a[1]) {
+          return b[1] - a[1]
+        }
+        // If scores are equal, sort alphabetically (ascending) for consistency
+        return a[0].localeCompare(b[0])
+      })
+    
+    const topType = sortedTypes[0][0]
+    const topScore = sortedTypes[0][1]
+    
+    // Log for debugging (can be removed in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('RIASEC Scores:', scores)
+      console.log('Top Type:', topType, 'Score:', topScore)
+    }
+    
+    return topType
   }
 
   const handleComplete = async () => {
