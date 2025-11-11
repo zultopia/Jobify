@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Briefcase, User, Award, TrendingUp, RefreshCw, Edit, CheckCircle, ArrowRight, Lightbulb, Target, Hammer, Search, MessageCircle, Users, Clipboard, Sparkles, Star, Zap, BarChart3, Clock, BookOpen } from 'lucide-react'
+import { getGamificationData } from '@/app/utils/gamification'
 
 const RIASEC_INFO: Record<string, any> = {
   'R': {
@@ -11,40 +12,68 @@ const RIASEC_INFO: Record<string, any> = {
     description: 'Hands-on, practical, and enjoys working with tools',
     traits: ['Practical', 'Mechanical', 'Outdoor-oriented', 'Tool-focused'],
     suitableJobs: ['Mechanical Engineer', 'Civil Engineer', 'Electrician', 'Architect', 'Construction Manager'],
-    color: 'blue',
+    color: 'red',
     hexColor: '#EF4444', // red
     label: 'doers',
-    icon: Hammer
+    icon: Hammer,
+    gradientFrom: 'from-red-500',
+    gradientTo: 'to-red-600',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-600',
+    borderColor: 'border-red-200',
+    badgeBg: 'bg-red-500/10',
+    badgeText: 'text-red-700'
   },
   'I': {
     name: 'Investigative',
     description: 'Analytical, curious, and enjoys research',
     traits: ['Analytical', 'Scientific', 'Intellectual', 'Research-oriented'],
     suitableJobs: ['Data Scientist', 'Research Scientist', 'Software Engineer', 'Biologist', 'Physicist'],
-    color: 'purple',
+    color: 'blue',
     hexColor: '#3B82F6', // blue
     label: 'thinkers',
-    icon: Search
+    icon: Search,
+    gradientFrom: 'from-blue-500',
+    gradientTo: 'to-blue-600',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
+    borderColor: 'border-blue-200',
+    badgeBg: 'bg-blue-500/10',
+    badgeText: 'text-blue-700'
   },
   'A': {
     name: 'Artistic',
     description: 'Creative, expressive, and enjoys artistic activities',
     traits: ['Creative', 'Expressive', 'Innovative', 'Artistic'],
     suitableJobs: ['UI/UX Designer', 'Graphic Designer', 'Writer', 'Musician', 'Architect'],
-    color: 'pink',
+    color: 'green',
     hexColor: '#10B981', // green
     label: 'creators',
-    icon: Lightbulb
+    icon: Lightbulb,
+    gradientFrom: 'from-green-500',
+    gradientTo: 'to-green-600',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-600',
+    borderColor: 'border-green-200',
+    badgeBg: 'bg-green-500/10',
+    badgeText: 'text-green-700'
   },
   'S': {
     name: 'Social',
     description: 'Helpful, friendly, and enjoys working with people',
     traits: ['Helpful', 'Friendly', 'Empathetic', 'People-oriented'],
     suitableJobs: ['Teacher', 'Counselor', 'Social Worker', 'Nurse', 'HR Manager'],
-    color: 'green',
+    color: 'purple',
     hexColor: '#8B5CF6', // purple
     label: 'helpers',
-    icon: Users
+    icon: Users,
+    gradientFrom: 'from-purple-500',
+    gradientTo: 'to-purple-600',
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-600',
+    borderColor: 'border-purple-200',
+    badgeBg: 'bg-purple-500/10',
+    badgeText: 'text-purple-700'
   },
   'E': {
     name: 'Enterprising',
@@ -54,7 +83,14 @@ const RIASEC_INFO: Record<string, any> = {
     color: 'orange',
     hexColor: '#F97316', // orange
     label: 'persuaders',
-    icon: MessageCircle
+    icon: MessageCircle,
+    gradientFrom: 'from-orange-500',
+    gradientTo: 'to-orange-600',
+    bgColor: 'bg-orange-100',
+    textColor: 'text-orange-600',
+    borderColor: 'border-orange-200',
+    badgeBg: 'bg-orange-500/10',
+    badgeText: 'text-orange-700'
   },
   'C': {
     name: 'Conventional',
@@ -64,178 +100,53 @@ const RIASEC_INFO: Record<string, any> = {
     color: 'yellow',
     hexColor: '#EAB308', // yellow
     label: 'organizers',
-    icon: Clipboard
+    icon: Clipboard,
+    gradientFrom: 'from-yellow-500',
+    gradientTo: 'to-yellow-600',
+    bgColor: 'bg-yellow-100',
+    textColor: 'text-yellow-600',
+    borderColor: 'border-yellow-200',
+    badgeBg: 'bg-yellow-500/10',
+    badgeText: 'text-yellow-700'
   }
 }
 
-// RIASEC Hexagon Visualization Component
-function RIASECHexagon({ userType, riasecInfo }: { userType: string, riasecInfo: Record<string, any> }) {
-  const size = 320
-  const center = size / 2
-  const radius = size / 2 - 30
-  
-  // Define segments (triangles) - each segment is 60 degrees
-  // Order: R (top), I (top-right), A (bottom-right), S (bottom), E (bottom-left), C (top-left)
-  const segments = [
-    { type: 'R', angle: -90, startAngle: -120, endAngle: -60, labelAngle: -90 },
-    { type: 'I', angle: -30, startAngle: -60, endAngle: 0, labelAngle: -30 },
-    { type: 'A', angle: 30, startAngle: 0, endAngle: 60, labelAngle: 30 },
-    { type: 'S', angle: 90, startAngle: 60, endAngle: 120, labelAngle: 90 },
-    { type: 'E', angle: 150, startAngle: 120, endAngle: 180, labelAngle: 150 },
-    { type: 'C', angle: -150, startAngle: -180, endAngle: -120, labelAngle: -150 },
-  ]
-  
-  const getSegmentPath = (segment: any) => {
-    const centerPoint = { x: center, y: center }
-    const startRad = (segment.startAngle * Math.PI) / 180
-    const endRad = (segment.endAngle * Math.PI) / 180
-    const startPoint = {
-      x: center + radius * Math.cos(startRad),
-      y: center + radius * Math.sin(startRad)
-    }
-    const endPoint = {
-      x: center + radius * Math.cos(endRad),
-      y: center + radius * Math.sin(endRad)
-    }
-    return `M ${centerPoint.x} ${centerPoint.y} L ${startPoint.x} ${startPoint.y} L ${endPoint.x} ${endPoint.y} Z`
-  }
-  
-  const getLabelPosition = (segment: any) => {
-    const labelRad = (segment.labelAngle * Math.PI) / 180
-    const labelRadius = radius * 0.65
-    return {
-      x: center + labelRadius * Math.cos(labelRad),
-      y: center + labelRadius * Math.sin(labelRad),
-      angle: segment.labelAngle
-    }
-  }
-  
-  const getIconPosition = (segment: any) => {
-    const iconRad = (segment.angle * Math.PI) / 180
-    const iconRadius = radius * 0.38
-    return {
-      x: center + iconRadius * Math.cos(iconRad),
-      y: center + iconRadius * Math.sin(iconRad)
-    }
-  }
-  
+// Simple Circular Progress Component for EXP
+function SimpleCircularProgress({ percentage, size = 80, strokeWidth = 6, color = '#3B82F6' }: { percentage: number, size?: number, strokeWidth?: number, color?: string }) {
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const offset = circumference - (percentage / 100) * circumference
+
   return (
-    <div className="flex justify-center items-center p-3 sm:p-4">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="max-w-full h-auto">
-        {/* Draw segments */}
-        {segments.map((segment) => {
-          const info = riasecInfo[segment.type]
-          const Icon = info.icon
-          const isHighlighted = userType === segment.type
-          const labelPos = getLabelPosition(segment)
-          const iconPos = getIconPosition(segment)
-          const segmentPath = getSegmentPath(segment)
-          
-          return (
-            <g key={segment.type}>
-              {/* Segment triangle */}
-              <path
-                d={segmentPath}
-                fill={info.hexColor}
-                stroke={isHighlighted ? '#1F2937' : '#9CA3AF'}
-                strokeWidth={isHighlighted ? 4 : 1.5}
-                strokeLinejoin="round"
-                opacity={isHighlighted ? 1 : 0.75}
-                className={isHighlighted ? 'drop-shadow-lg' : 'drop-shadow-sm'}
-                style={{
-                  filter: isHighlighted ? 'brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,0.2))' : 'none',
-                  transition: 'all 0.3s ease'
-                }}
-              />
-              
-              {/* Icon with background circle */}
-              <g>
-                {/* Background circle for icon */}
-                <circle
-                  cx={iconPos.x}
-                  cy={iconPos.y}
-                  r={isHighlighted ? 26 : 22}
-                  fill="rgba(255,255,255,0.95)"
-                  stroke={isHighlighted ? '#1F2937' : 'rgba(0,0,0,0.2)'}
-                  strokeWidth={isHighlighted ? 2.5 : 1.5}
-                  opacity={0.95}
-                  className={isHighlighted ? 'drop-shadow-lg' : 'drop-shadow-md'}
-                />
-                {/* Icon */}
-                <foreignObject
-                  x={iconPos.x - 20}
-                  y={iconPos.y - 20}
-                  width="40"
-                  height="40"
-                >
-                  <div className="flex items-center justify-center w-full h-full">
-                    <Icon 
-                      className="w-8 h-8 sm:w-9 sm:h-9 text-gray-900" 
-                      style={{ 
-                        opacity: isHighlighted ? 1 : 0.85,
-                      }}
-                      strokeWidth={isHighlighted ? 2.5 : 2}
-                      fill="none"
-                    />
-                  </div>
-                </foreignObject>
-              </g>
-              
-              {/* Label - positioned and rotated for better readability */}
-              <g transform={`rotate(${labelPos.angle} ${labelPos.x} ${labelPos.y})`}>
-                <rect
-                  x={labelPos.x - 32}
-                  y={labelPos.y - 9}
-                  width="64"
-                  height="18"
-                  rx="4"
-                  fill={isHighlighted ? 'rgba(255,255,255,0.98)' : 'rgba(255,255,255,0.95)'}
-                  stroke={isHighlighted ? '#1F2937' : 'rgba(0,0,0,0.15)'}
-                  strokeWidth={isHighlighted ? 2 : 1}
-                  opacity={0.98}
-                />
-                <text
-                  x={labelPos.x}
-                  y={labelPos.y}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  className="font-bold"
-                  fill="#1F2937"
-                  style={{
-                    fontSize: isHighlighted ? '12px' : '11px',
-                    letterSpacing: '0.3px',
-                    fontWeight: '700'
-                  }}
-                >
-                  {info.label}
-                </text>
-              </g>
-            </g>
-          )
-        })}
-        
-        {/* Center circle with user type */}
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
         <circle
-          cx={center}
-          cy={center}
-          r={radius * 0.2}
-          fill="#1F2937"
-          className="drop-shadow-md"
-          stroke="#FFFFFF"
-          strokeWidth="2.5"
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="none"
+          className="text-gray-200"
         />
-        <text
-          x={center}
-          y={center}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          className="text-2xl sm:text-3xl font-bold"
-          fill="#FFFFFF"
-          style={{ letterSpacing: '1px' }}
-        >
-          {userType}
-        </text>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-500"
+        />
       </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-sm font-bold text-gray-900">{Math.round(percentage)}%</div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -246,6 +157,7 @@ export default function DashboardPage() {
   const [riasecInfo, setRiasecInfo] = useState<any>(null)
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([])
   const [hoveredJob, setHoveredJob] = useState<number | null>(null)
+  const [gamification, setGamification] = useState<any>(null)
 
   const loadProfile = useCallback(() => {
     // Try to load from userProfiles first (multi-user support)
@@ -292,6 +204,19 @@ export default function DashboardPage() {
     
     setUserProfile(parsed)
     
+    // Load gamification data
+    try {
+      const gameData = getGamificationData()
+      setGamification(gameData)
+    } catch (e) {
+      setGamification({
+        level: 1,
+        currentExp: 0,
+        expNeeded: 100,
+        totalExp: 0,
+      })
+    }
+    
     // Get RIASEC info
     if (parsed.riasecType) {
       const info = RIASEC_INFO[parsed.riasecType] || RIASEC_INFO['S']
@@ -336,10 +261,22 @@ export default function DashboardPage() {
       loadProfile()
     }
     
+    // Listen for gamification updates
+    const handleGamificationUpdate = () => {
+      try {
+        const gameData = getGamificationData()
+        setGamification(gameData)
+      } catch (e) {
+        console.error('Error loading gamification data:', e)
+      }
+    }
+    
     window.addEventListener('profileUpdated', handleProfileUpdate as EventListener)
+    window.addEventListener('gamificationUpdated', handleGamificationUpdate)
     
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener)
+      window.removeEventListener('gamificationUpdated', handleGamificationUpdate)
     }
   }, [loadProfile])
 
@@ -360,13 +297,18 @@ export default function DashboardPage() {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
 
-  const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600 border-blue-200',
-    purple: 'bg-purple-100 text-purple-600 border-purple-200',
-    pink: 'bg-pink-100 text-pink-600 border-pink-200',
-    green: 'bg-green-100 text-green-600 border-green-200',
-    orange: 'bg-orange-100 text-orange-600 border-orange-200',
-    yellow: 'bg-yellow-100 text-yellow-600 border-yellow-200',
+  // Get color classes based on RIASEC type
+  const getColorClasses = (type: string) => {
+    const info = RIASEC_INFO[type] || RIASEC_INFO['S']
+    return {
+      bg: info.bgColor,
+      text: info.textColor,
+      border: info.borderColor,
+      gradient: `bg-gradient-to-br ${info.gradientFrom} ${info.gradientTo}`,
+      badgeBg: info.badgeBg,
+      badgeText: info.badgeText,
+      hex: info.hexColor
+    }
   }
 
   // Get time-based greeting
@@ -491,124 +433,173 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* RIASEC Type Card with Hexagon Visualization */}
-        <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-xl shadow-xl p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 border border-gray-100 relative overflow-hidden">
-          {/* Decorative background elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-200/10 rounded-full blur-3xl -ml-24 -mb-24"></div>
+        {/* RIASEC Type Card with Visualization */}
+        {riasecInfo && (() => {
+          const colors = getColorClasses(userProfile.riasecType)
+          const expPercentage = gamification ? (gamification.currentExp / gamification.expNeeded) * 100 : 0
           
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            {/* Left side - Text info */}
-            <div className="flex flex-col">
-              <div className="relative">
-                {/* Decorative badge */}
-                <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-10 blur-xl"></div>
-                
-                <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6 mb-6">
-                  <div className={`relative w-24 h-24 sm:w-28 sm:h-28 ${colorClasses[riasecInfo.color as keyof typeof colorClasses]} rounded-2xl flex items-center justify-center border-2 flex-shrink-0 shadow-lg transform hover:scale-105 transition-transform`}>
-                    <span className="text-4xl sm:text-5xl font-bold">{userProfile.riasecType}</span>
-                    {/* Decorative corner */}
-                    <div className="absolute top-0 right-0 w-6 h-6 bg-gradient-to-br from-blue-500/20 to-transparent rounded-bl-2xl"></div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">{riasecInfo.name} Type</h2>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    </div>
-                    <p className="text-base sm:text-lg text-gray-700 mb-5 leading-relaxed font-medium">{riasecInfo.description}</p>
-                    <div className="flex flex-wrap gap-2.5">
-                      {riasecInfo.traits.map((trait: string, index: number) => (
-                        <span
-                          key={index}
-                          className="px-4 py-2 bg-white/80 backdrop-blur-sm text-gray-800 rounded-full text-sm font-semibold shadow-sm border border-gray-200/50 hover:shadow-md hover:scale-105 transition-all"
-                        >
-                          {trait}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+          return (
+            <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 border border-gray-100 relative overflow-hidden">
+              {/* Decorative background elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-200/10 rounded-full blur-3xl -ml-24 -mb-24"></div>
               
-              {/* Additional info card */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-6 border border-gray-200/50 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Lightbulb className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-1 text-sm">Career Insight</h3>
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      Your {riasecInfo.name} personality type suggests you thrive in environments that value {riasecInfo.traits[0].toLowerCase()} and {riasecInfo.traits[1].toLowerCase()} approaches.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-            <button
-                onClick={handleRetakeTest}
-                className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 w-full sm:w-auto self-start"
-              >
-                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="whitespace-nowrap">Retake Test</span>
-            </button>
-            </div>
-            
-            {/* Right side - Hexagon Visualization */}
-            <div className="flex justify-center lg:justify-end items-start">
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 sm:p-6 border-2 border-gray-200/50 shadow-xl w-full max-w-sm relative overflow-hidden">
-                {/* Decorative gradient overlay */}
-                <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-blue-50/50 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 w-full h-20 bg-gradient-to-t from-purple-50/50 to-transparent"></div>
-                
-                <div className="relative z-10">
-                  <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-xl p-3 border border-gray-100 shadow-inner">
-                    <RIASECHexagon userType={userProfile.riasecType} riasecInfo={RIASEC_INFO} />
-                  </div>
-                  
-                  <div className="mt-5 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200/50 shadow-sm">
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <p className="text-center text-sm text-gray-800 font-semibold">
-                        Your type: <span className="font-bold text-blue-700 text-base">{riasecInfo.name}</span>
-                      </p>
-                    </div>
-                    <p className="text-center text-xs text-gray-600">
-                      Highlighted segment represents your personality type
-                    </p>
-                  </div>
-                  
-                  {/* Legend for hexagon */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-500 text-center mb-2 font-medium">RIASEC Model</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {['R', 'I', 'A', 'S', 'E', 'C'].map((type) => {
-                        const typeInfo = RIASEC_INFO[type]
-                        const isUserType = userProfile.riasecType === type
-                        return (
-                          <div 
-                            key={type}
-                            className={`flex items-center gap-1.5 p-1.5 rounded-lg text-xs ${
-                              isUserType ? 'bg-blue-100 border border-blue-300' : 'bg-gray-50'
-                            }`}
-                          >
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: typeInfo.hexColor }}
-                            ></div>
-                            <span className={`font-medium ${isUserType ? 'text-blue-700' : 'text-gray-600'}`}>
-                              {type}
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                {/* Left side - Text info */}
+                <div className="flex flex-col">
+                  <div className="relative">
+                    {/* Decorative badge */}
+                    <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-10 blur-xl"></div>
+                    
+                    <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6 mb-6">
+                      {/* Badge dengan warna sesuai tipe */}
+                      <div className={`relative w-24 h-24 sm:w-28 sm:h-28 ${colors.bg} ${colors.text} rounded-2xl flex items-center justify-center border-2 ${colors.border} flex-shrink-0 shadow-lg transform hover:scale-105 transition-transform`}>
+                        <span className="text-4xl sm:text-5xl font-bold">{userProfile.riasecType}</span>
+                        {/* Decorative corner */}
+                        <div className={`absolute top-0 right-0 w-6 h-6 ${colors.gradient} opacity-20 rounded-bl-2xl`}></div>
+                      </div>
+                      <div className="flex-1">
+                        {/* Judul tipe dengan warna sesuai tipe */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${colors.text}`}>{riasecInfo.name} Type</h2>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        </div>
+                        <p className="text-base sm:text-lg text-gray-700 mb-5 leading-relaxed font-medium">{riasecInfo.description}</p>
+                        <div className="flex flex-wrap gap-2.5">
+                          {riasecInfo.traits.map((trait: string, index: number) => (
+                            <span
+                              key={index}
+                              className="px-4 py-2 bg-white/80 backdrop-blur-sm text-gray-800 rounded-full text-sm font-semibold shadow-sm border border-gray-200/50 hover:shadow-md hover:scale-105 transition-all"
+                            >
+                              {trait}
                             </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* EXP Progress Section */}
+                  {gamification && (
+                    <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-200 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-blue-600" />
+                          <h3 className="font-semibold text-blue-600 text-sm">Progress Level {gamification.level}</h3>
+                        </div>
+                        <span className="text-xs text-blue-700 font-bold">
+                          {gamification.currentExp}/{gamification.expNeeded} EXP
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <SimpleCircularProgress 
+                          percentage={expPercentage} 
+                          size={70} 
+                          strokeWidth={6}
+                          color="#3B82F6"
+                        />
+                        <div className="flex-1">
+                          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                            <div
+                              className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
+                              style={{ 
+                                width: `${Math.min(expPercentage, 100)}%`
+                              }}
+                            />
                           </div>
-                        )
-                      })}
+                          <p className="text-xs text-gray-600">
+                            {gamification.totalExp} total EXP earned
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Additional info card */}
+                  <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 mb-6 border border-gray-200/50 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Lightbulb className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1 text-sm">Career Insight</h3>
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                          Your {riasecInfo.name} personality type suggests you thrive in environments that value {riasecInfo.traits[0].toLowerCase()} and {riasecInfo.traits[1].toLowerCase()} approaches.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={handleRetakeTest}
+                    className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all text-sm sm:text-base font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 w-full sm:w-auto self-start"
+                  >
+                    <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span className="whitespace-nowrap">Retake Test</span>
+                  </button>
+                </div>
+                
+                {/* Right side - RIASEC Visualization Image (Smaller) */}
+                <div className="flex justify-center lg:justify-end items-start">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 sm:p-5 border-2 border-gray-200/50 shadow-xl w-full max-w-xs relative overflow-hidden">
+                    {/* Decorative gradient overlay */}
+                    <div className="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-blue-50/50 to-transparent rounded-t-xl"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-purple-50/50 to-transparent rounded-b-xl"></div>
+                    
+                    <div className="relative z-10">
+                      <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-lg p-2 border border-gray-100 shadow-inner flex items-center justify-center mb-3">
+                        <img 
+                          src="/assets/R1.png" 
+                          alt="RIASEC Visualization" 
+                          className="w-full h-auto max-w-full object-contain"
+                        />
+                      </div>
+                      
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-200/50 shadow-sm mb-3">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.hex }}></div>
+                          <p className="text-center text-xs text-gray-800 font-semibold">
+                            Your type: <span className={`font-bold text-sm ${colors.text}`}>{riasecInfo.name}</span>
+                          </p>
+                        </div>
+                        <p className="text-center text-xs text-gray-600">
+                          RIASEC personality visualization
+                        </p>
+                      </div>
+                      
+                      {/* Legend for RIASEC types */}
+                      <div className="pt-3 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 text-center mb-2 font-medium">RIASEC Model</p>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {['R', 'I', 'A', 'S', 'E', 'C'].map((type) => {
+                            const typeInfo = RIASEC_INFO[type]
+                            const isUserType = userProfile.riasecType === type
+                            return (
+                              <div 
+                                key={type}
+                                className={`flex items-center gap-1 p-1.5 rounded text-xs ${
+                                  isUserType ? 'bg-blue-100 border border-blue-300' : 'bg-gray-50'
+                                }`}
+                              >
+                                <div 
+                                  className="w-2.5 h-2.5 rounded-full" 
+                                  style={{ backgroundColor: typeInfo.hexColor }}
+                                ></div>
+                                <span className={`font-medium ${isUserType ? 'text-blue-700' : 'text-gray-600'}`}>
+                                  {type}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          )
+        })()}
 
         {/* Quick Actions Section */}
         <div className="mb-6 sm:mb-8">

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Video, VideoOff, Clock, CheckCircle, XCircle, Mic, MicOff, Play, Volume2, VolumeX, RotateCw, TrendingUp, Target, Lightbulb, MessageSquare, Eye, AlertCircle, Award, BarChart3, ArrowRight, Sparkles, Zap, BookOpen, FileText } from 'lucide-react'
+import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
 
 const INTERVIEW_QUESTIONS = [
   'Tell me about yourself.',
@@ -103,6 +104,15 @@ export default function InterviewPage() {
     
     // Save final answer
     setAnswers(prev => [...prev, 'Audio response recorded'])
+    
+    // Add EXP for completing interview
+    try {
+      addExp(EXP_REWARDS.completeInterview)
+      // Dispatch event to update gamification data in other pages
+      window.dispatchEvent(new CustomEvent('gamificationUpdated'))
+    } catch (error) {
+      console.error('Error adding EXP:', error)
+    }
     
     stopCamera()
     setIsInterviewing(false)

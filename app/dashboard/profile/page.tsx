@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { User, Mail, Briefcase, Award, BookOpen, Link as LinkIcon, FileText, Edit2, CheckCircle, Upload, X as XIcon } from 'lucide-react'
+import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -574,6 +575,13 @@ export default function ProfilePage() {
                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                           const newSkills = [...(profile.skills || []), e.currentTarget.value.trim()]
                           setEditedProfile({ ...editedProfile, skills: newSkills })
+                          // Add EXP for adding skill
+                          try {
+                            addExp(EXP_REWARDS.addSkill)
+                            window.dispatchEvent(new CustomEvent('gamificationUpdated'))
+                          } catch (error) {
+                            console.error('Error adding EXP:', error)
+                          }
                           e.currentTarget.value = ''
                         }
                       }}

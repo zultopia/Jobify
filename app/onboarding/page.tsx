@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Upload, Link as LinkIcon } from 'lucide-react'
+import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
 
 const RIASEC_QUESTIONS = [
   { id: 1, question: 'I enjoy working with tools and machinery', type: 'R' },
@@ -20,21 +21,83 @@ const RIASEC_QUESTIONS = [
 ]
 
 const JOB_INTERESTS = [
+  // Technology & IT
   'Software Engineer',
   'UI/UX Designer',
   'Data Scientist',
-  'Product Manager',
-  'Marketing Manager',
-  'Business Analyst',
   'DevOps Engineer',
   'Frontend Developer',
   'Backend Developer',
   'Full Stack Developer',
   'Mobile Developer',
   'QA Engineer',
+  'Cybersecurity Specialist',
+  'Cloud Architect',
+  'Machine Learning Engineer',
+  // Business & Management
+  'Product Manager',
   'Project Manager',
+  'Business Analyst',
+  'Operations Manager',
+  'Business Development',
+  'Consultant',
+  'Entrepreneur',
+  // Marketing & Sales
+  'Marketing Manager',
   'Sales Manager',
+  'Digital Marketing',
+  'Content Creator',
+  'Social Media Manager',
+  'Brand Manager',
+  // Finance & Accounting
+  'Accountant',
+  'Financial Analyst',
+  'Investment Banker',
+  'Financial Advisor',
+  'Auditor',
+  // Human Resources
   'HR Manager',
+  'Recruiter',
+  'Talent Acquisition',
+  'HR Business Partner',
+  // Healthcare
+  'Doctor',
+  'Nurse',
+  'Pharmacist',
+  'Therapist',
+  'Medical Researcher',
+  // Education
+  'Teacher',
+  'Professor',
+  'Education Consultant',
+  'Curriculum Developer',
+  // Engineering (Non-IT)
+  'Mechanical Engineer',
+  'Civil Engineer',
+  'Electrical Engineer',
+  'Chemical Engineer',
+  'Aerospace Engineer',
+  // Creative & Design
+  'Graphic Designer',
+  'Interior Designer',
+  'Architect',
+  'Photographer',
+  'Video Editor',
+  // Legal
+  'Lawyer',
+  'Legal Advisor',
+  'Paralegal',
+  // Science & Research
+  'Research Scientist',
+  'Biologist',
+  'Chemist',
+  'Physicist',
+  // Other
+  'Writer',
+  'Journalist',
+  'Translator',
+  'Event Planner',
+  'Chef',
 ]
 
 export default function OnboardingPage() {
@@ -48,6 +111,7 @@ export default function OnboardingPage() {
   const [cvFile, setCvFile] = useState<File | null>(null)
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [jobInterests, setJobInterests] = useState<string[]>([])
+  const [customInterest, setCustomInterest] = useState('')
   const [userEmail, setUserEmail] = useState<string>('')
 
   useEffect(() => {
@@ -158,6 +222,13 @@ export default function OnboardingPage() {
     }
   }
 
+  const addCustomInterest = () => {
+    if (customInterest.trim() && !jobInterests.includes(customInterest.trim())) {
+      setJobInterests([...jobInterests, customInterest.trim()])
+      setCustomInterest('')
+    }
+  }
+
   const calculateRiasecType = () => {
     const scores: Record<string, number> = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
     
@@ -256,6 +327,14 @@ export default function OnboardingPage() {
     const status = onboardingStatus ? JSON.parse(onboardingStatus) : {}
     status[email] = true
     localStorage.setItem('onboardingStatus', JSON.stringify(status))
+
+    // Add EXP for completing RIASEC test
+    try {
+      addExp(EXP_REWARDS.completeRiasecTest)
+      window.dispatchEvent(new CustomEvent('gamificationUpdated'))
+    } catch (error) {
+      console.error('Error adding EXP:', error)
+    }
 
     // Dispatch custom event to update other pages
     window.dispatchEvent(new CustomEvent('profileUpdated', { detail: profileData }))
@@ -551,23 +630,81 @@ export default function OnboardingPage() {
               <div className="mb-4">
                 <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Step 4 of 4</span>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 mt-1">Job Interests</h2>
-                <p className="text-sm sm:text-base text-gray-600">Select the types of jobs you're interested in</p>
+                <p className="text-sm sm:text-base text-gray-600">Select the types of jobs you're interested in. You can also add your own custom interest.</p>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {JOB_INTERESTS.map((interest) => (
+              {/* Selected Interests Display */}
+              {jobInterests.length > 0 && (
+                <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Selected Interests ({jobInterests.length}):</p>
+                  <div className="flex flex-wrap gap-2">
+                    {jobInterests.map((interest) => (
+                      <span
+                        key={interest}
+                        className="px-3 py-1 bg-blue-600 text-white rounded-full text-sm font-medium flex items-center gap-2"
+                      >
+                        {interest}
+                        <button
+                          onClick={() => toggleJobInterest(interest)}
+                          className="text-white hover:text-red-200 transition-colors font-bold text-lg leading-none"
+                          title="Remove"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Interest Input */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Add Custom Interest</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customInterest}
+                    onChange={(e) => setCustomInterest(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        addCustomInterest()
+                      }
+                    }}
+                    placeholder="Type your custom job interest and press Enter"
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  />
                   <button
-                    key={interest}
-                    onClick={() => toggleJobInterest(interest)}
-                    className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border-2 transition text-sm sm:text-base ${
-                      jobInterests.includes(interest)
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:border-gray-300'
+                    onClick={addCustomInterest}
+                    disabled={!customInterest.trim() || jobInterests.includes(customInterest.trim())}
+                    className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition text-sm sm:text-base ${
+                      customInterest.trim() && !jobInterests.includes(customInterest.trim())
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    {interest}
+                    Add
                   </button>
-                ))}
+                </div>
+              </div>
+              
+              {/* Job Interests Grid */}
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Popular Job Interests:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
+                  {JOB_INTERESTS.map((interest) => (
+                    <button
+                      key={interest}
+                      onClick={() => toggleJobInterest(interest)}
+                      className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg border-2 transition text-sm sm:text-base text-left ${
+                        jobInterests.includes(interest)
+                          ? 'border-blue-600 bg-blue-50 text-blue-700 font-semibold'
+                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
+                      }`}
+                    >
+                      {interest}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
