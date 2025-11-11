@@ -125,10 +125,10 @@ export default function DashboardLayout({
   const menuItems = [
     { icon: BarChart3, title: 'Dashboard', href: '/dashboard', color: 'blue' },
     { icon: Briefcase, title: 'Job Recommendations', href: '/dashboard/jobs', color: 'blue' },
-    { icon: Video, title: 'Practice Interview', href: '/dashboard/interview', color: 'purple' },
-    { icon: TrendingUp, title: 'Career Coaching', href: '/dashboard/coaching', color: 'green' },
-    { icon: Target, title: 'Progress Tracking', href: '/dashboard/progress', color: 'pink' },
-    { icon: User, title: 'Profile', href: '/dashboard/profile', color: 'pink' },
+    { icon: Video, title: 'Practice Interview', href: '/dashboard/interview', color: 'blue' },
+    { icon: TrendingUp, title: 'Career Coaching', href: '/dashboard/coaching', color: 'blue' },
+    { icon: Target, title: 'Progress Tracking', href: '/dashboard/progress', color: 'blue' },
+    { icon: User, title: 'Profile', href: '/dashboard/profile', color: 'blue' },
   ]
 
   if (!userProfile) {
@@ -136,7 +136,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex relative">
+    <div className="min-h-screen bg-gray-50 flex relative">
       {/* Sidebar */}
       <aside
         className={`${

@@ -239,6 +239,39 @@ export const generateJobRecommendations = (
     }
   }
   
+  // Function to get job-specific skills
+  const getJobSpecificSkills = (role: string): string[] => {
+    const roleLower = role.toLowerCase()
+    
+    if (roleLower.includes('mechanical engineer')) {
+      return ['CAD (Computer-Aided Design)', 'SolidWorks', 'AutoCAD', 'Thermodynamics', 'Materials Science', 'Manufacturing Processes', 'Mechanical Design', 'Project Management']
+    } else if (roleLower.includes('civil engineer')) {
+      return ['AutoCAD', 'Structural Analysis', 'Construction Management', 'Surveying', 'Geotechnical Engineering', 'Project Management', 'Building Codes', 'Infrastructure Design']
+    } else if (roleLower.includes('electrical engineer')) {
+      return ['Circuit Design', 'Power Systems', 'PLC Programming', 'Electrical CAD', 'Control Systems', 'Embedded Systems', 'Signal Processing', 'Project Management']
+    } else if (roleLower.includes('construction manager')) {
+      return ['Project Management', 'Construction Methods', 'Safety Management', 'Budget Management', 'Contract Management', 'Building Codes', 'Team Leadership', 'Risk Assessment']
+    } else if (roleLower.includes('software engineer') || roleLower.includes('developer') || roleLower.includes('programmer')) {
+      return ['JavaScript', 'Python', 'React', 'Node.js', 'System Design', 'Problem Solving', 'Git', 'Agile']
+    } else if (roleLower.includes('data scientist')) {
+      return ['Python', 'Machine Learning', 'SQL', 'Data Analysis', 'Statistics', 'TensorFlow', 'Pandas', 'Data Visualization']
+    } else if (roleLower.includes('ui/ux designer') || roleLower.includes('designer')) {
+      return ['Figma', 'Adobe XD', 'User Research', 'Prototyping', 'Design Systems', 'UI/UX', 'Wireframing', 'User Testing']
+    } else if (roleLower.includes('product manager')) {
+      return ['Product Strategy', 'Agile', 'Stakeholder Management', 'Market Research', 'Roadmap Planning', 'Data Analysis', 'User Research', 'Communication']
+    } else if (roleLower.includes('business analyst')) {
+      return ['Data Analysis', 'SQL', 'Business Process', 'Requirements Gathering', 'Stakeholder Management', 'Process Improvement', 'Documentation', 'Communication']
+    } else if (roleLower.includes('hr manager')) {
+      return ['Recruitment', 'Employee Relations', 'HR Policies', 'Talent Management', 'Performance Management', 'Compensation', 'Communication', 'Leadership']
+    } else if (roleLower.includes('accountant') || roleLower.includes('financial analyst')) {
+      return ['Financial Analysis', 'Accounting Principles', 'Excel', 'Financial Reporting', 'Tax Preparation', 'Auditing', 'Budgeting', 'Analytical Skills']
+    } else if (roleLower.includes('project manager')) {
+      return ['Project Management', 'Agile', 'Risk Management', 'Stakeholder Management', 'Budget Management', 'Team Leadership', 'Communication', 'Planning']
+    } else {
+      return ['Problem Solving', 'Communication', 'Teamwork', 'Leadership', 'Project Management', 'Analytical Skills']
+    }
+  }
+  
   const typeMapping = riasecJobMap[riasecType] || riasecJobMap['I']
   
   // Generate recommendations based on RIASEC type
@@ -247,6 +280,13 @@ export const generateJobRecommendations = (
     const company = COMPANIES[companyId]
     
     if (company) {
+      // Get job-specific skills
+      const jobSpecificSkills = getJobSpecificSkills(role)
+      // Merge with user skills if available, prioritizing job-specific skills
+      const finalSkills = jobSpecificSkills.length > 0 
+        ? jobSpecificSkills 
+        : (skills.length > 0 ? skills.slice(0, 5) : ['Problem Solving', 'Communication', 'Teamwork', 'Leadership'])
+      
       const job: JobRecommendation = {
         id: `${companyId}-${role.toLowerCase().replace(/\s+/g, '-')}`,
         title: role,
@@ -260,7 +300,7 @@ export const generateJobRecommendations = (
           'Strong problem-solving skills',
           'Excellent communication skills'
         ],
-        skills: skills.length > 0 ? skills.slice(0, 5) : ['Problem Solving', 'Communication', 'Teamwork', 'Leadership'],
+        skills: finalSkills,
         salaryRange: {
           min: 80000 + (index * 10000),
           max: 120000 + (index * 15000),
@@ -282,6 +322,12 @@ export const generateJobRecommendations = (
       const companyIds = Object.keys(COMPANIES)
       const randomCompany = COMPANIES[companyIds[Math.floor(Math.random() * companyIds.length)]]
       
+      // Get job-specific skills for interest-based jobs
+      const interestSpecificSkills = getJobSpecificSkills(interest)
+      const finalInterestSkills = interestSpecificSkills.length > 0 
+        ? interestSpecificSkills 
+        : (skills.length > 0 ? skills.slice(0, 5) : ['Technical Skills', 'Problem Solving'])
+      
       const job: JobRecommendation = {
         id: `${randomCompany.id}-${interest.toLowerCase().replace(/\s+/g, '-')}`,
         title: interest,
@@ -294,7 +340,7 @@ export const generateJobRecommendations = (
           'Relevant certifications',
           'Strong technical skills'
         ],
-        skills: skills.length > 0 ? skills.slice(0, 5) : ['Technical Skills', 'Problem Solving'],
+        skills: finalInterestSkills,
         salaryRange: {
           min: 70000,
           max: 110000,
@@ -512,11 +558,29 @@ export const calculateCareerPathProgress = (job: JobRecommendation | null, userP
   const requiredSkills = job.skills || []
   const userSkills = userProfile?.skills || []
   
+  // Helper function to normalize skill names for better matching
+  const normalizeSkill = (skill: string): string => {
+    return skill.toLowerCase()
+      .replace(/\s*\([^)]*\)/g, '') // Remove parentheses content like "(Computer-Aided Design)"
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim()
+  }
+  
   // Calculate relevant skills progress (skills that match job requirements)
-  const relevantSkillsCount = userSkills.filter((skill: string) => 
-    requiredSkills.some(required => required.toLowerCase().includes(skill.toLowerCase()) || 
-                                   skill.toLowerCase().includes(required.toLowerCase()))
-  ).length
+  const relevantSkillsCount = userSkills.filter((skill: string) => {
+    const normalizedUserSkill = normalizeSkill(skill)
+    return requiredSkills.some(required => {
+      const normalizedRequired = normalizeSkill(required)
+      // Check for exact match or partial match
+      return normalizedUserSkill === normalizedRequired ||
+             normalizedUserSkill.includes(normalizedRequired) ||
+             normalizedRequired.includes(normalizedUserSkill) ||
+             // Special cases: CAD matches AutoCAD, SolidWorks matches SolidWorks
+             (normalizedUserSkill.includes('cad') && normalizedRequired.includes('cad')) ||
+             (normalizedUserSkill.includes('autocad') && normalizedRequired.includes('cad')) ||
+             (normalizedUserSkill.includes('solidworks') && normalizedRequired.includes('solidworks'))
+    })
+  }).length
   
   const totalRequiredSkills = requiredSkills.length
   const skillsProgressPercentage = totalRequiredSkills > 0 

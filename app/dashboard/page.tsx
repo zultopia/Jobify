@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Briefcase, User, Award, TrendingUp, RefreshCw, Edit, ArrowRight, Lightbulb, Target, Hammer, Search, MessageCircle, Users, Clipboard, Sparkles, Star, Zap, BarChart3, Clock, BookOpen, MapPin, DollarSign, Building2, Heart, Video, GraduationCap, Trophy, CheckCircle2 } from 'lucide-react'
+import { Briefcase, User, Award, TrendingUp, RefreshCw, Edit, ArrowRight, Lightbulb, Target, Hammer, Search, MessageCircle, Users, Clipboard, Star, Zap, BarChart3, Clock, BookOpen, MapPin, DollarSign, Building2, Heart, Video, GraduationCap, Trophy, CheckCircle2 } from 'lucide-react'
 import { getGamificationData } from '@/app/utils/gamification'
 import { getSelectedJob, JobRecommendation, calculateCareerPathProgress } from '@/app/utils/jobRecommendations'
 
@@ -441,7 +441,7 @@ export default function DashboardPage() {
   const profileCompletion = calculateProfileCompletion()
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-6 sm:mb-8">
@@ -458,7 +458,7 @@ export default function DashboardPage() {
 
         {/* Selected Job Tracking Card */}
         {selectedJob ? (
-          <div className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50/90 to-purple-50/90 backdrop-blur-sm rounded-xl shadow-md p-4 border border-blue-200/70">
+          <div className="mb-4 sm:mb-6 bg-white backdrop-blur-sm rounded-xl shadow-md p-4 border border-blue-100">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div>
@@ -544,17 +544,17 @@ export default function DashboardPage() {
           const colors = getColorClasses(userProfile.riasecType)
           
           return (
-            <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 border border-gray-100 relative overflow-hidden">
+            <div className="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 border border-gray-200 relative overflow-hidden">
               {/* Decorative background elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-200/10 rounded-full blur-3xl -ml-24 -mb-24"></div>
+              <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/40 rounded-full blur-3xl -mr-32 -mt-32"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-gray-100/50 rounded-full blur-3xl -ml-24 -mb-24"></div>
               
               <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                 {/* Left side - Text info */}
                 <div className="flex flex-col">
                   <div className="relative">
                     {/* Decorative badge */}
-                    <div className="absolute -top-2 -right-2 w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full opacity-10 blur-xl"></div>
+                    <div className="absolute -top-2 -right-2 w-20 h-20 bg-blue-100 rounded-full opacity-20 blur-xl"></div>
                     
                     <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6 mb-6">
                       {/* Badge dengan warna sesuai tipe */}
@@ -589,7 +589,6 @@ export default function DashboardPage() {
                     <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-200 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Sparkles className="w-5 h-5 text-blue-600" />
                           <h3 className="font-semibold text-blue-600 text-sm">
                             {careerPathProgress 
                               ? `Career Path Progress`
@@ -611,7 +610,7 @@ export default function DashboardPage() {
                         <div className="flex-1">
                           <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
                             <div
-                              className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
+                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500"
                               style={{ 
                                 width: `${Math.min(displayProgress.percentage, 100)}%`
                               }}
@@ -670,7 +669,7 @@ export default function DashboardPage() {
                         />
                       </div>
                       
-                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-200/50 shadow-sm mb-3">
+                      <div className="bg-blue-50 rounded-lg p-3 border border-blue-100 shadow-sm mb-3">
                         <div className="flex items-center justify-center gap-2 mb-1">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.hex }}></div>
                           <p className="text-center text-xs text-gray-800 font-semibold">
@@ -733,7 +732,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="mb-6">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-6 border border-blue-100">
+              <div className="bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-100">
                 <p className="text-base sm:text-lg text-gray-800 mb-4 leading-relaxed">
                   Based on your <span className="font-bold text-blue-600">{riasecInfo.name}</span> personality type, 
                   you're best suited for roles that involve <span className="font-semibold">{riasecInfo.description.toLowerCase()}</span>. 
@@ -796,7 +795,7 @@ export default function DashboardPage() {
                         </div>
                         <Link
                           href="/dashboard/jobs"
-                          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all text-sm font-semibold shadow-md hover:shadow-lg transform group-hover:scale-105"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-semibold shadow-md hover:shadow-lg transform group-hover:scale-105"
                         >
                           View Details
                         </Link>

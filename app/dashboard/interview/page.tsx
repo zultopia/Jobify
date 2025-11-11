@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Video, VideoOff, Clock, CheckCircle, XCircle, Mic, MicOff, Play, Volume2, VolumeX, RotateCw, TrendingUp, Target, Lightbulb, MessageSquare, Eye, AlertCircle, Award, BarChart3, ArrowRight, Sparkles, Zap, BookOpen, FileText, Briefcase, Building2 } from 'lucide-react'
+import { Video, VideoOff, Clock, CheckCircle, XCircle, Mic, MicOff, Play, Volume2, VolumeX, RotateCw, TrendingUp, Target, Lightbulb, MessageSquare, Eye, AlertCircle, Award, BarChart3, ArrowRight, Zap, BookOpen, FileText, Briefcase, Building2 } from 'lucide-react'
 import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
 import { getSelectedJob, JobRecommendation } from '@/app/utils/jobRecommendations'
 
@@ -510,7 +510,7 @@ export default function InterviewPage() {
   const report = showReport ? generateReport() : null
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">AI Interview Practice</h1>
@@ -523,7 +523,7 @@ export default function InterviewPage() {
 
         {/* Selected Job Card */}
         {selectedJob && (
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-6 mb-6 border-2 border-blue-200">
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-blue-100">
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900">{selectedJob.title}</h2>
@@ -701,11 +701,11 @@ export default function InterviewPage() {
         )}
 
         {showReport && report && (
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50/30 -mx-4 sm:-mx-6 px-4 sm:px-6 py-6 sm:py-8">
+          <div className="min-h-screen bg-gray-50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-6 sm:py-8">
             <div className="max-w-6xl mx-auto">
               {/* Header Section */}
               <div className="text-center mb-8 sm:mb-10">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg">
                   <Award className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-3">Interview Performance Report</h2>
@@ -742,7 +742,7 @@ export default function InterviewPage() {
 
                 {/* Completion Rate */}
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100/50 to-purple-100/50 rounded-full blur-2xl -mr-16 -mt-16"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/60 rounded-full blur-2xl -mr-16 -mt-16"></div>
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-sm font-semibold text-gray-600">Completion</span>
@@ -756,7 +756,7 @@ export default function InterviewPage() {
                     </p>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div 
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-1000"
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-1000"
                         style={{ width: `${report.completionRate}%` }}
                       ></div>
                     </div>
@@ -785,13 +785,13 @@ export default function InterviewPage() {
               {/* Detailed Score Breakdown */}
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 mb-6 sm:mb-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                     <BarChart3 className="w-5 h-5 text-white" />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Performance Breakdown</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                    <div className="p-4 bg-blue-50 rounded-xl">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-gray-700">Communication</span>
                       <span className="text-lg font-bold text-blue-600">{report.analysis.communicationScore}%</span>
@@ -815,14 +815,14 @@ export default function InterviewPage() {
                       ></div>
                     </div>
                   </div>
-                  <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-semibold text-gray-700">Confidence</span>
-                      <span className="text-lg font-bold text-purple-600">{Math.min(100, report.analysis.confidenceScore)}%</span>
+                      <span className="text-lg font-bold text-blue-600">{Math.min(100, report.analysis.confidenceScore)}%</span>
                     </div>
-                    <div className="w-full bg-purple-200 rounded-full h-2">
+                    <div className="w-full bg-blue-200 rounded-full h-2">
                       <div 
-                        className="bg-purple-600 h-2 rounded-full transition-all duration-1000"
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-1000"
                         style={{ width: `${Math.min(100, report.analysis.confidenceScore)}%` }}
                       ></div>
                     </div>
@@ -842,9 +842,6 @@ export default function InterviewPage() {
                   {report.analysis.strengths.map((strength, i) => (
                     <div key={i} className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:shadow-lg transition-shadow">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Sparkles className="w-4 h-4 text-white" />
-                        </div>
                         <div className="flex-1">
                           <h4 className="font-bold text-gray-900 mb-1">{strength.title}</h4>
                           <p className="text-sm text-gray-700 mb-2">{strength.description}</p>
@@ -910,9 +907,9 @@ export default function InterviewPage() {
                   {report.analysis.recommendations.map((rec, i) => {
                     const Icon = rec.icon
                     return (
-                      <div key={i} className="p-5 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200 hover:shadow-lg transition-all group">
+                      <div key={i} className="p-5 bg-blue-50 rounded-xl border border-blue-100 hover:shadow-lg transition-all group">
                         <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
                             <Icon className="w-5 h-5 text-white" />
                           </div>
                           <div className="flex-1">
@@ -931,7 +928,7 @@ export default function InterviewPage() {
               </div>
 
               {/* Next Steps */}
-              <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 text-white">
+              <div className="bg-blue-600 rounded-2xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 text-white">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                     <ArrowRight className="w-5 h-5 text-white" />
@@ -953,7 +950,7 @@ export default function InterviewPage() {
               {/* Question-by-Question Analysis */}
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 mb-6 sm:mb-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-5 h-5 text-white" />
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Question Analysis</h3>
@@ -962,7 +959,7 @@ export default function InterviewPage() {
                   {report.analysis.questionAnalysis.map((q, i) => (
                     <div key={i} className={`p-4 rounded-xl border-2 ${
                       q.answered 
-                        ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' 
+                        ? 'bg-blue-50 border-blue-100' 
                         : 'bg-gray-50 border-gray-200 opacity-60'
                     }`}>
                       <div className="flex items-start justify-between gap-4 mb-2">

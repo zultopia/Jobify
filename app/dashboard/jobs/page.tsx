@@ -52,7 +52,7 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Job Recommendations</h1>
@@ -63,7 +63,7 @@ export default function JobsPage() {
 
         {/* Currently Selected Job Banner */}
         {selectedJob && (
-          <div className="mb-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-4 border-2 border-blue-200">
+          <div className="mb-6 bg-white rounded-2xl shadow-xl p-4 border border-blue-100">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div>
@@ -155,7 +155,7 @@ export default function JobsPage() {
                     <div className="mb-4">
                       <button
                         onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                        className="flex items-center justify-between w-full p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg hover:from-blue-100 hover:to-purple-100 transition-colors"
+                        className="flex items-center justify-between w-full p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                       >
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -202,7 +202,7 @@ export default function JobsPage() {
                                       <p className="text-xs font-semibold text-gray-700 mb-1">Resources:</p>
                                       <div className="flex flex-wrap gap-1">
                                         {step.resources.map((resource, resIdx) => (
-                                          <span key={resIdx} className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs">
+                                          <span key={resIdx} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
                                             {resource}
                       </span>
                     ))}
@@ -239,7 +239,7 @@ export default function JobsPage() {
                     )}
                     <button
                       onClick={() => router.push(`/dashboard/interview`)}
-                      className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                      className="px-6 py-3 bg-white text-blue-600 border-2 border-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
                     >
                       <BookOpen className="w-5 h-5" />
                       Practice Interview

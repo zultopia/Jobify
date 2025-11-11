@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Target, Award, Calendar, CheckCircle, Sparkles, Gift, Zap, Star, Trophy, Crown, Gem, Coins, Building2, MapPin, Users, Linkedin, GraduationCap, Briefcase, BookOpen, CheckCircle2, FileCheck, MessageCircle } from 'lucide-react'
+import { TrendingUp, Target, Award, Calendar, CheckCircle, Gift, Zap, Star, Trophy, Crown, Gem, Coins, Building2, MapPin, Users, Linkedin, GraduationCap, Briefcase, BookOpen, CheckCircle2, FileCheck, MessageCircle } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { EXP_REWARDS, calculateExpNeeded, getCharacterEvolution, GamificationData, saveGamification, initializeGamification } from '@/app/utils/gamification'
 import { getSelectedJob, getPeopleAtCompany, JobRecommendation, PersonProfile, calculateCareerPathProgress } from '@/app/utils/jobRecommendations'
@@ -22,10 +22,10 @@ const RIASEC_INFO: Record<string, any> = {
 // Available benefits
 const AVAILABLE_BENEFITS = [
   { id: 1, title: 'Premium Discount 20%', description: 'Get 20% off on premium features', icon: Gift, color: 'blue' }, // Discount = gift
-  { id: 2, title: 'Free Coaching Session', description: '1 free career coaching session', icon: Users, color: 'purple' }, // Coaching = people/mentor
-  { id: 3, title: 'Priority Support', description: 'Get priority customer support', icon: Zap, color: 'yellow' }, // Priority = fast/lightning
-  { id: 4, title: 'Exclusive Badge', description: 'Unlock exclusive achievement badge', icon: Trophy, color: 'orange' }, // Badge = trophy
-  { id: 5, title: 'Premium Features Access', description: '7 days free premium access', icon: Crown, color: 'pink' }, // Premium = crown
+  { id: 2, title: 'Free Coaching Session', description: '1 free career coaching session', icon: Users, color: 'blue' }, // Coaching = people/mentor
+  { id: 3, title: 'Priority Support', description: 'Get priority customer support', icon: Zap, color: 'blue' }, // Priority = fast/lightning
+  { id: 4, title: 'Exclusive Badge', description: 'Unlock exclusive achievement badge', icon: Trophy, color: 'blue' }, // Badge = trophy
+  { id: 5, title: 'Premium Features Access', description: '7 days free premium access', icon: Crown, color: 'blue' }, // Premium = crown
 ]
 
 // All gamification functions are imported from utils/gamification.ts
@@ -79,6 +79,7 @@ export default function ProgressPage() {
   const [progressData, setProgressData] = useState<any>(null)
   const [gamification, setGamification] = useState<GamificationData>(initializeGamification())
   const [showBenefitModal, setShowBenefitModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'overview' | 'career-path' | 'analytics' | 'achievements'>('overview')
   const [selectedJob, setSelectedJob] = useState<JobRecommendation | null>(null)
   const [peopleAtCompany, setPeopleAtCompany] = useState<PersonProfile[]>([])
 
@@ -121,11 +122,29 @@ export default function ProgressPage() {
     const completedSteps = careerPathProgress.completedSteps
     const careerPath = job.careerPath || []
     
+    // Helper function to normalize skill names for better matching
+    const normalizeSkill = (skill: string): string => {
+      return skill.toLowerCase()
+        .replace(/\s*\([^)]*\)/g, '') // Remove parentheses content like "(Computer-Aided Design)"
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim()
+    }
+    
     // Calculate relevant skills progress (skills that match job requirements)
-    const relevantSkillsCount = userSkills.filter((skill: string) => 
-      requiredSkills.some(required => required.toLowerCase().includes(skill.toLowerCase()) || 
-                                     skill.toLowerCase().includes(required.toLowerCase()))
-    ).length
+    const relevantSkillsCount = userSkills.filter((skill: string) => {
+      const normalizedUserSkill = normalizeSkill(skill)
+      return requiredSkills.some(required => {
+        const normalizedRequired = normalizeSkill(required)
+        // Check for exact match or partial match
+        return normalizedUserSkill === normalizedRequired ||
+               normalizedUserSkill.includes(normalizedRequired) ||
+               normalizedRequired.includes(normalizedUserSkill) ||
+               // Special cases: CAD matches AutoCAD, SolidWorks matches SolidWorks
+               (normalizedUserSkill.includes('cad') && normalizedRequired.includes('cad')) ||
+               (normalizedUserSkill.includes('autocad') && normalizedRequired.includes('cad')) ||
+               (normalizedUserSkill.includes('solidworks') && normalizedRequired.includes('solidworks'))
+      })
+    }).length
     
     // Calculate progress metrics based on job requirements
     const totalRequiredSkills = requiredSkills.length
@@ -133,14 +152,25 @@ export default function ProgressPage() {
       ? Math.min(100, Math.round((relevantSkillsCount / totalRequiredSkills) * 100))
       : 0
     
-    // Generate progress over time (simulated based on career path progress)
-    // For demo: Show gradual progress that reflects 60% completion (3 out of 5 steps)
+    // Generate progress over time (simulated based on actual user skills)
+    // Show gradual progress from 0 to actual relevantSkillsCount
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
     const skillsProgress = months.map((month, index) => {
-      // Simulate gradual skill acquisition - cap at 60% of required skills for demo
-      const maxSkillsForDemo = Math.floor(totalRequiredSkills * 0.6) // 60% of required skills
-      const baseSkills = Math.max(1, Math.floor(maxSkillsForDemo * (index + 1) / months.length))
-      return { month, skills: Math.min(baseSkills + Math.floor(Math.random() * 2), maxSkillsForDemo) }
+      // Use actual relevantSkillsCount if available, otherwise show gradual progress
+      const targetSkills = relevantSkillsCount > 0 
+        ? relevantSkillsCount 
+        : Math.max(1, Math.floor(totalRequiredSkills * 0.4)) // Fallback: 40% for demo
+      
+      // Simulate gradual skill acquisition over 6 months
+      // Progress from 0 to targetSkills
+      const progressRatio = (index + 1) / months.length
+      const currentSkills = Math.floor(targetSkills * progressRatio)
+      
+      // Add some variation but ensure it's realistic
+      const variation = index === 0 ? 0 : Math.floor(Math.random() * 2) - 1 // -1, 0, or 1
+      const finalSkills = Math.max(0, Math.min(targetSkills, currentSkills + variation))
+      
+      return { month, skills: finalSkills }
     })
     
     // Interview scores improving over time (practice makes perfect)
@@ -441,19 +471,6 @@ export default function ProgressPage() {
       .slice(0, 4)
   }, [progressData, gamification, userProfile, selectedJob])
   
-  // Debug: Log gamification data to help troubleshoot (can be removed in production)
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Gamification Data:', gamification)
-      console.log('Progress Percentage:', progressPercentage)
-      console.log('Career Path Progress:', careerPathProgress)
-      console.log('Current EXP:', gamification.currentExp)
-      console.log('EXP Needed:', gamification.expNeeded)
-      console.log('Total EXP:', gamification.totalExp)
-      console.log('User Profile:', userProfile)
-      console.log('Progress Data:', progressData)
-    }
-  }, [gamification, progressPercentage, careerPathProgress, userProfile, progressData])
 
   // Claim benefit function
   const claimBenefit = (benefitId: number) => {
@@ -524,19 +541,19 @@ export default function ProgressPage() {
       value: `${progressData.jobSpecificMetrics.relevantSkillsAcquired}/${progressData.jobSpecificMetrics.totalRequiredSkills}`,
       percentage: progressData.jobSpecificMetrics.requiredSkillsProgress || 0,
       icon: GraduationCap, // Skills = learning/education
-      color: 'purple'
+      color: 'blue'
     },
     {
       title: 'Interviews Completed',
       value: progressData.interviewsCompleted.toString(),
       icon: MessageCircle, // Interview = communication/conversation
-      color: 'green'
+      color: 'blue'
     },
     {
       title: 'Certifications',
       value: progressData.certificationsEarned.toString(),
       icon: Award, // Certifications = achievements/awards
-      color: 'orange'
+      color: 'blue'
     }
   ] : [
     {
@@ -550,7 +567,7 @@ export default function ProgressPage() {
       title: 'Interviews Completed',
       value: progressData.interviewsCompleted.toString(),
       icon: MessageCircle, // Interview = communication
-      color: 'purple'
+      color: 'blue'
     },
     {
       title: 'Jobs Applied',
@@ -562,13 +579,13 @@ export default function ProgressPage() {
       title: 'Certifications',
       value: progressData.certificationsEarned.toString(),
       icon: Award, // Certifications = achievements
-      color: 'orange'
+      color: 'blue'
     }
   ]
 
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Progress Tracking</h1>
@@ -579,50 +596,196 @@ export default function ProgressPage() {
           </p>
         </div>
 
-        {/* Selected Job Information */}
-        {selectedJob && (
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-6 mb-6 border-2 border-blue-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
-                  <p className="text-gray-600 flex items-center gap-2 mt-1">
-                    <Building2 className="w-4 h-4" />
-                    {selectedJob.company.name} • <MapPin className="w-4 h-4" /> {selectedJob.location}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                      {selectedJob.matchScore}% Match
-                    </span>
-                  </div>
+        {/* Tabs Navigation */}
+        <div className="mb-6 border-b border-gray-200">
+          <div className="flex flex-wrap gap-2 sm:gap-4">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 sm:px-6 sm:py-3 font-semibold transition border-b-2 ${
+                activeTab === 'overview'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Overview
+            </button>
+            {selectedJob && (
+              <button
+                onClick={() => setActiveTab('career-path')}
+                className={`px-4 py-2 sm:px-6 sm:py-3 font-semibold transition border-b-2 ${
+                  activeTab === 'career-path'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Career Path
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-2 sm:px-6 sm:py-3 font-semibold transition border-b-2 ${
+                activeTab === 'analytics'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('achievements')}
+              className={`px-4 py-2 sm:px-6 sm:py-3 font-semibold transition border-b-2 ${
+                activeTab === 'achievements'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Achievements
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Job Information - Shown in Overview and Career Path tabs */}
+        {selectedJob && (activeTab === 'overview' || activeTab === 'career-path') && (
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6 border border-blue-100">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
+                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                    {selectedJob.matchScore}% Match
+                  </span>
                 </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-              <div className="bg-white/60 rounded-lg p-3">
-                <div className="text-sm text-gray-600 mb-1">Salary Range</div>
-                <p className="font-semibold text-gray-900">
-                  ${selectedJob.salaryRange.min.toLocaleString()} - ${selectedJob.salaryRange.max.toLocaleString()}
+                <p className="text-gray-600 flex items-center gap-2 text-sm">
+                  <Building2 className="w-4 h-4" />
+                  {selectedJob.company.name} • <MapPin className="w-4 h-4" /> {selectedJob.location}
                 </p>
-              </div>
-              <div className="bg-white/60 rounded-lg p-3">
-                <div className="text-sm text-gray-600 mb-1">Experience Level</div>
-                <p className="font-semibold text-gray-900">{selectedJob.experienceLevel}</p>
-              </div>
-              <div className="bg-white/60 rounded-lg p-3">
-                <div className="text-sm text-gray-600 mb-1">Job Type</div>
-                <p className="font-semibold text-gray-900">{selectedJob.type}</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Career Path Progress Section */}
-        {selectedJob && selectedJob.careerPath && selectedJob.careerPath.length > 0 && progressData?.jobSpecificMetrics && (
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Stats Grid - Compact */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              {stats.map((stat, index) => {
+                const Icon = stat.icon
+                const colorClasses = {
+                  blue: 'bg-blue-100 text-blue-600',
+                  green: 'bg-green-100 text-green-600',
+                  orange: 'bg-orange-100 text-orange-600',
+                }
+                
+                return (
+                  <div key={index} className="bg-white rounded-xl shadow-lg p-3 sm:p-4">
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 ${colorClasses[stat.color as keyof typeof colorClasses]} rounded-lg flex items-center justify-center mb-2`}>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                    <div className="text-xs text-gray-600">{stat.title}</div>
+                    {stat.percentage !== undefined && (
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                        <div
+                          className="h-1.5 rounded-full bg-blue-500"
+                          style={{ width: `${stat.percentage}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Character & Progress Section */}
+            <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6 border border-gray-200">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Character Display - Compact */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gray-200/50 shadow-lg">
+                  <div className="text-center">
+                    <div className="inline-block relative mb-3">
+                      <div className={`w-24 h-24 sm:w-32 sm:h-32 ${riasecInfo.bgColor} rounded-2xl flex items-center justify-center mx-auto shadow-lg border-4 border-white relative overflow-hidden`}>
+                        <img 
+                          src="/assets/R2.png" 
+                          alt={`${riasecInfo.name} Character`}
+                          className="w-full h-full object-contain"
+                        />
+                        <div className="absolute top-1 right-1 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-1 shadow-lg">
+                          <Star className="w-3 h-3 text-white" fill="white" />
+                        </div>
+                      </div>
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-3 py-0.5 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
+                        Level {gamification?.level || 1}
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">{riasecInfo.name} Character</h3>
+                    <div className="flex items-center justify-center gap-1.5 mb-1">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${
+                            i < characterEvolution
+                              ? 'bg-gradient-to-br from-yellow-400 to-orange-500'
+                              : 'bg-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-600">Evolution Stage {characterEvolution}/5</p>
+                  </div>
+                </div>
+
+                {/* Progress Circle - Compact */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gray-200/50 shadow-lg">
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <h3 className="text-base font-semibold text-blue-600">
+                        {careerPathProgress 
+                          ? 'Career Path Progress'
+                          : `Progress Level ${gamification?.level || 1}`
+                        }
+                      </h3>
+                    </div>
+                    <CircularProgress percentage={displayProgress.percentage} size={120} strokeWidth={8} />
+                    <div className="mt-4 text-center w-full">
+                      <span className="text-xs text-blue-700 font-bold mb-2 block">
+                        {displayProgress.current}/{displayProgress.total} {careerPathProgress ? 'Steps' : 'EXP'}
+                      </span>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(displayProgress.percentage, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">
+                        {displayProgress.subtitle}
+                      </p>
+                      {gamification?.benefitsAvailable && (
+                        <button
+                          onClick={() => setShowBenefitModal(true)}
+                          className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg py-2 px-3 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center gap-2 text-sm animate-pulse"
+                        >
+                          <Gift className="w-4 h-4" />
+                          Claim Your Reward!
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Career Path Tab */}
+        {activeTab === 'career-path' && selectedJob && (
+          <>
+            {/* Career Path Progress Section */}
+            {selectedJob.careerPath && selectedJob.careerPath.length > 0 && progressData?.jobSpecificMetrics && (
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-200">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                   <TrendingUp className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -687,233 +850,79 @@ export default function ProgressPage() {
           </div>
         )}
 
-        {/* People at Company Section */}
-        {selectedJob && peopleAtCompany.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-200">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">People at {selectedJob.company.name}</h2>
-                <p className="text-sm text-gray-600">Learn from professionals who work as {selectedJob.title}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {peopleAtCompany.map((person) => (
-                <div
-                  key={person.id}
-                  className="bg-gray-50 rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-all"
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {person.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900">{person.name}</h3>
-                      <p className="text-sm text-gray-600">{person.role}</p>
-                      <p className="text-xs text-gray-500">{person.experience}</p>
-                    </div>
+            {/* People at Company Section */}
+            {peopleAtCompany.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-200">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <Users className="w-6 h-6 text-white" />
                   </div>
-                  <div className="space-y-2 mb-3">
-                    <div className="flex items-start gap-2">
-                      <GraduationCap className="w-4 h-4 text-gray-400 mt-0.5" />
-                      <p className="text-xs text-gray-600">{person.education}</p>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <Briefcase className="w-4 h-4 text-gray-400 mt-0.5" />
-                      <p className="text-xs text-gray-600">{person.achievement}</p>
-                    </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">People at {selectedJob.company.name}</h2>
+                    <p className="text-sm text-gray-600">Learn from professionals who work as {selectedJob.title}</p>
                   </div>
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {person.skills.slice(0, 3).map((skill, idx) => (
-                      <span key={idx} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                  {person.linkedinUrl && (
-                    <a
-                      href={person.linkedinUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                    >
-                      <Linkedin className="w-3 h-3" />
-                      View LinkedIn
-                    </a>
-                  )}
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {peopleAtCompany.map((person) => (
+                    <div
+                      key={person.id}
+                      className="bg-gray-50 rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-all"
+                    >
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                          {person.name.charAt(0)}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-gray-900">{person.name}</h3>
+                          <p className="text-sm text-gray-600">{person.role}</p>
+                          <p className="text-xs text-gray-500">{person.experience}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-start gap-2">
+                          <GraduationCap className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <p className="text-xs text-gray-600">{person.education}</p>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Briefcase className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <p className="text-xs text-gray-600">{person.achievement}</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {person.skills.slice(0, 3).map((skill, idx) => (
+                          <span key={idx} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                      {person.linkedinUrl && (
+                        <a
+                          href={person.linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                        >
+                          <Linkedin className="w-3 h-3" />
+                          View LinkedIn
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Gamification Section - Character & EXP */}
-        <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-2xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 border border-gray-100 relative overflow-hidden">
-          {/* Decorative background */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-200/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-200/10 rounded-full blur-3xl -ml-24 -mb-24"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Your Career Character</h2>
-                <p className="text-sm text-gray-600">Level up by completing activities and earn rewards!</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              {/* Character Display */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border-2 border-gray-200/50 shadow-lg">
-                <div className="text-center mb-4">
-                  <div className="inline-block relative">
-                    <div className={`w-32 h-32 sm:w-40 sm:h-40 ${riasecInfo.bgColor} rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg border-4 border-white relative overflow-hidden`}>
-                      <img 
-                        src="/assets/R2.png" 
-                        alt={`${riasecInfo.name} Character`}
-                        className="w-full h-full object-contain"
-                      />
-                      {/* Evolution Badge */}
-                      <div className="absolute top-2 right-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-1.5 shadow-lg">
-                        <Star className="w-4 h-4 text-white" fill="white" />
-                      </div>
-                    </div>
-                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
-                      Level {gamification?.level || 1}
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{riasecInfo.name} Character</h3>
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-3 h-3 rounded-full ${
-                            i < characterEvolution
-                              ? 'bg-gradient-to-br from-yellow-400 to-orange-500'
-                              : 'bg-gray-300'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Evolution Stage {characterEvolution}/5
-                    </p>
-                  </div>
-                </div>
-
-                {/* Character Stats */}
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-gray-900">{gamification?.totalExp || 0}</div>
-                    <div className="text-xs text-gray-600">Total EXP</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-gray-900">{gamification?.benefitsClaimed || 0}</div>
-                    <div className="text-xs text-gray-600">Benefits Claimed</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress Circle - Career Path or EXP */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border-2 border-gray-200/50 shadow-lg">
-                <div className="flex flex-col items-center justify-center h-full">
-                  <div className="flex items-center justify-center gap-2 mb-4">
-                    <Sparkles className="w-5 h-5 text-blue-600" />
-                    <h3 className="text-lg font-semibold text-blue-600">
-                      {careerPathProgress 
-                        ? 'Career Path Progress'
-                        : `Progress Level ${gamification?.level || 1}`
-                      }
-                    </h3>
-                  </div>
-                  <CircularProgress percentage={displayProgress.percentage} size={140} strokeWidth={10} />
-                  <div className="mt-6 text-center w-full">
-                    <div className="flex items-center justify-center mb-3">
-                      <span className="text-xs text-blue-700 font-bold">
-                        {displayProgress.current}/{displayProgress.total} {careerPathProgress ? 'Steps' : 'EXP'}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(displayProgress.percentage, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      {displayProgress.subtitle}
-                    </p>
-                    {careerPathProgress && selectedJob && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Towards {selectedJob.title} at {selectedJob.company.name}
-                      </p>
-                    )}
-                    
-                    {/* Benefits Available Badge */}
-                    {gamification?.benefitsAvailable && (
-                      <button
-                        onClick={() => setShowBenefitModal(true)}
-                        className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl py-3 px-4 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center gap-2 animate-pulse"
-                      >
-                        <Gift className="w-5 h-5" />
-                        Claim Your Reward!
-                      </button>
-                    )}
-
-                    {/* EXP Info */}
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-xs text-gray-700 text-center">
-                        Complete activities to earn EXP and unlock rewards!
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* EXP Earning Guide */}
-            <div className="mt-6 bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Coins className="w-4 h-4 text-yellow-500" />
-                How to Earn EXP
-              </h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="text-center">
-                  <MessageCircle className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                  <div className="text-lg font-bold text-blue-600">{EXP_REWARDS.completeInterview}</div>
-                  <div className="text-xs text-gray-600">Interview</div>
-                </div>
-                <div className="text-center">
-                  <GraduationCap className="w-5 h-5 mx-auto mb-1 text-green-600" />
-                  <div className="text-lg font-bold text-green-600">{EXP_REWARDS.addSkill}</div>
-                  <div className="text-xs text-gray-600">Add Skill</div>
-                </div>
-                <div className="text-center">
-                  <Target className="w-5 h-5 mx-auto mb-1 text-purple-600" />
-                  <div className="text-lg font-bold text-purple-600">{EXP_REWARDS.completeGoal}</div>
-                  <div className="text-xs text-gray-600">Complete Goal</div>
-                </div>
-                <div className="text-center">
-                  <Award className="w-5 h-5 mx-auto mb-1 text-orange-600" />
-                  <div className="text-lg font-bold text-orange-600">{EXP_REWARDS.earnCertification}</div>
-                  <div className="text-xs text-gray-600">Certification</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <>
+            {/* Stats Grid - Detailed */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             const colorClasses = {
               blue: 'bg-blue-100 text-blue-600',
-              purple: 'bg-purple-100 text-purple-600',
               green: 'bg-green-100 text-green-600',
               orange: 'bg-orange-100 text-orange-600',
             }
@@ -928,7 +937,7 @@ export default function ProgressPage() {
                 {stat.percentage !== undefined && (
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className={`h-2 rounded-full ${colorClasses[stat.color as keyof typeof colorClasses].split(' ')[0]}`}
+                      className="h-2 rounded-full bg-blue-500"
                       style={{ width: `${stat.percentage}%` }}
                     />
                   </div>
@@ -1003,18 +1012,158 @@ export default function ProgressPage() {
                 <Legend />
                 <Bar 
                   dataKey="score" 
-                  fill="#8b5cf6" 
+                  fill="#3B82F6" 
                   name="Interview Score" 
                 />
               </BarChart>
             </ResponsiveContainer>
             {selectedJob && (
-              <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-gray-700">
                   Practice interviews tailored for <strong>{selectedJob.title}</strong> at <strong>{selectedJob.company.name}</strong>
                 </p>
               </div>
             )}
+          </div>
+        </div>
+          </>
+        )}
+
+        {/* Achievements Tab */}
+        {activeTab === 'achievements' && (
+          <>
+            {/* Character & EXP Section - Full */}
+            <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 mb-6 border border-gray-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Your Career Character</h2>
+                  <p className="text-sm text-gray-600">Level up by completing activities and earn rewards!</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                {/* Character Display */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gray-200/50 shadow-lg">
+                  <div className="text-center">
+                    <div className="inline-block relative mb-3">
+                      <div className={`w-32 h-32 sm:w-40 sm:h-40 ${riasecInfo.bgColor} rounded-2xl flex items-center justify-center mx-auto shadow-lg border-4 border-white relative overflow-hidden`}>
+                        <img 
+                          src="/assets/R2.png" 
+                          alt={`${riasecInfo.name} Character`}
+                          className="w-full h-full object-contain"
+                        />
+                        <div className="absolute top-2 right-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full p-1.5 shadow-lg">
+                          <Star className="w-4 h-4 text-white" fill="white" />
+                        </div>
+                      </div>
+                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg whitespace-nowrap">
+                        Level {gamification?.level || 1}
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{riasecInfo.name} Character</h3>
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-3 h-3 rounded-full ${
+                            i < characterEvolution
+                              ? 'bg-gradient-to-br from-yellow-400 to-orange-500'
+                              : 'bg-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm text-gray-600 mb-4">Evolution Stage {characterEvolution}/5</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-gray-50 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-gray-900">{gamification?.totalExp || 0}</div>
+                        <div className="text-xs text-gray-600">Total EXP</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-gray-900">{gamification?.benefitsClaimed || 0}</div>
+                        <div className="text-xs text-gray-600">Benefits Claimed</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Circle */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-gray-200/50 shadow-lg">
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <div className="flex items-center justify-center gap-2 mb-4">
+                      <h3 className="text-lg font-semibold text-blue-600">
+                        {careerPathProgress 
+                          ? 'Career Path Progress'
+                          : `Progress Level ${gamification?.level || 1}`
+                        }
+                      </h3>
+                    </div>
+                    <CircularProgress percentage={displayProgress.percentage} size={140} strokeWidth={10} />
+                    <div className="mt-6 text-center w-full">
+                      <span className="text-xs text-blue-700 font-bold mb-3 block">
+                        {displayProgress.current}/{displayProgress.total} {careerPathProgress ? 'Steps' : 'EXP'}
+                      </span>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(displayProgress.percentage, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">
+                        {displayProgress.subtitle}
+                      </p>
+                      {careerPathProgress && selectedJob && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Towards {selectedJob.title} at {selectedJob.company.name}
+                        </p>
+                      )}
+                      {gamification?.benefitsAvailable && (
+                        <button
+                          onClick={() => setShowBenefitModal(true)}
+                          className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl py-3 px-4 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center justify-center gap-2 animate-pulse mt-2"
+                        >
+                          <Gift className="w-5 h-5" />
+                          Claim Your Reward!
+                        </button>
+                      )}
+                      <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                        <p className="text-xs text-gray-700 text-center">
+                          Complete activities to earn EXP and unlock rewards!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* EXP Earning Guide */}
+              <div className="mt-4 bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-gray-200/50">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-yellow-500" />
+                  How to Earn EXP
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="text-center">
+                    <MessageCircle className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+                    <div className="text-lg font-bold text-blue-600">{EXP_REWARDS.completeInterview}</div>
+                    <div className="text-xs text-gray-600">Interview</div>
+                  </div>
+                  <div className="text-center">
+                    <GraduationCap className="w-5 h-5 mx-auto mb-1 text-green-600" />
+                    <div className="text-lg font-bold text-green-600">{EXP_REWARDS.addSkill}</div>
+                    <div className="text-xs text-gray-600">Add Skill</div>
+                  </div>
+                  <div className="text-center">
+                    <Target className="w-5 h-5 mx-auto mb-1 text-blue-600" />
+                    <div className="text-lg font-bold text-blue-600">{EXP_REWARDS.completeGoal}</div>
+                    <div className="text-xs text-gray-600">Complete Goal</div>
+                  </div>
+                  <div className="text-center">
+                    <Award className="w-5 h-5 mx-auto mb-1 text-orange-600" />
+                    <div className="text-lg font-bold text-orange-600">{EXP_REWARDS.earnCertification}</div>
+                    <div className="text-xs text-gray-600">Certification</div>
+                  </div>
+                </div>
           </div>
         </div>
 
@@ -1028,7 +1177,7 @@ export default function ProgressPage() {
             {recentAchievements.map((achievement, index) => {
               const Icon = achievement.icon
               return (
-                <div key={index} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div key={index} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                   </div>
@@ -1039,9 +1188,9 @@ export default function ProgressPage() {
                       {achievement.date}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 text-yellow-600">
-                    <Coins className="w-4 h-4" />
-                    <span className="text-sm font-bold">+{achievement.exp}</span>
+                      <div className="flex items-center gap-1 text-yellow-600">
+                        <Coins className="w-4 h-4" />
+                        <span className="text-sm font-bold">+{achievement.exp}</span>
                   </div>
                 </div>
               )
@@ -1050,11 +1199,11 @@ export default function ProgressPage() {
         </div>
 
         {/* Motivation Section */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-4 sm:p-6 md:p-8 text-white">
+            <div className="bg-blue-600 rounded-xl shadow-lg p-4 sm:p-6 text-white">
           <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Keep Going! 🚀</h2>
-          <p className="mb-4 sm:mb-6 opacity-90 text-sm sm:text-base md:text-lg">
+              <p className="mb-4 sm:mb-6 opacity-90 text-sm sm:text-base">
             You're making great progress on your career journey. Continue building skills, practicing interviews, 
-            and networking to reach your goals and level up your character!
+                and networking to reach your goals and level up your character!
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="bg-white/20 rounded-lg p-3 sm:p-4">
@@ -1062,29 +1211,31 @@ export default function ProgressPage() {
               <div className="text-xs sm:text-sm opacity-90">Network Connections</div>
             </div>
             <div className="bg-white/20 rounded-lg p-3 sm:p-4">
-              <div className="text-2xl sm:text-3xl font-bold mb-2">
-                {selectedJob && progressData?.jobSpecificMetrics
-                  ? `${progressData.jobSpecificMetrics.relevantSkillsAcquired}/${progressData.jobSpecificMetrics.totalRequiredSkills}`
-                  : progressData.skillsProgress[progressData.skillsProgress.length - 1].skills
-                }
-              </div>
-              <div className="text-xs sm:text-sm opacity-90">
-                {selectedJob ? 'Required Skills' : 'Total Skills'}
+                  <div className="text-2xl sm:text-3xl font-bold mb-2">
+                    {selectedJob && progressData?.jobSpecificMetrics
+                      ? `${progressData.jobSpecificMetrics.relevantSkillsAcquired}/${progressData.jobSpecificMetrics.totalRequiredSkills}`
+                      : progressData.skillsProgress[progressData.skillsProgress.length - 1].skills
+                    }
+                  </div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    {selectedJob ? 'Required Skills' : 'Total Skills'}
+                  </div>
+                </div>
+                <div className="bg-white/20 rounded-lg p-3 sm:p-4">
+                  <div className="text-2xl sm:text-3xl font-bold mb-2">
+                    {selectedJob && progressData?.jobSpecificMetrics
+                      ? `${Math.round((progressData.jobSpecificMetrics.careerPathStepsCompleted / progressData.jobSpecificMetrics.totalCareerPathSteps) * 100)}%`
+                      : `${Math.round((progressData.goalsCompleted / progressData.totalGoals) * 100)}%`
+                    }
+                  </div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    {selectedJob ? 'Career Path Progress' : 'Goals Progress'}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="bg-white/20 rounded-lg p-3 sm:p-4">
-              <div className="text-2xl sm:text-3xl font-bold mb-2">
-                {selectedJob && progressData?.jobSpecificMetrics
-                  ? `${Math.round((progressData.jobSpecificMetrics.careerPathStepsCompleted / progressData.jobSpecificMetrics.totalCareerPathSteps) * 100)}%`
-                  : `${Math.round((progressData.goalsCompleted / progressData.totalGoals) * 100)}%`
-                }
-              </div>
-              <div className="text-xs sm:text-sm opacity-90">
-                {selectedJob ? 'Career Path Progress' : 'Goals Progress'}
-              </div>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Benefits Modal */}
@@ -1112,7 +1263,6 @@ export default function ProgressPage() {
                   const Icon = benefit.icon
                   const colorClasses: Record<string, { bg: string, text: string }> = {
                     blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
-                    purple: { bg: 'bg-purple-100', text: 'text-purple-600' },
                     yellow: { bg: 'bg-yellow-100', text: 'text-yellow-600' },
                     orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
                     pink: { bg: 'bg-pink-100', text: 'text-pink-600' },

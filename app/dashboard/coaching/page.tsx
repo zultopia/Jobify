@@ -568,7 +568,7 @@ export default function CoachingPage() {
 
         {/* Selected Job Card */}
         {selectedJob && (
-          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-6 mb-6 border-2 border-blue-200">
+          <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-blue-100">
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-gray-900">{selectedJob.title}</h2>

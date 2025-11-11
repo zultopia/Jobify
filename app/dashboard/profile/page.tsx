@@ -5,6 +5,76 @@ import { useRouter } from 'next/navigation'
 import { User, Mail, Briefcase, Award, BookOpen, Link as LinkIcon, FileText, Edit2, CheckCircle, Upload, X as XIcon } from 'lucide-react'
 import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
 
+// RIASEC Type Information - matching dashboard
+const RIASEC_INFO: Record<string, any> = {
+  'R': {
+    name: 'Realistic',
+    bgColor: 'bg-red-100',
+    textColor: 'text-red-600',
+    borderColor: 'border-red-200',
+    badgeBg: 'bg-red-500',
+    badgeText: 'text-red-700',
+    hexColor: '#EF4444'
+  },
+  'I': {
+    name: 'Investigative',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
+    borderColor: 'border-blue-200',
+    badgeBg: 'bg-blue-500',
+    badgeText: 'text-blue-700',
+    hexColor: '#3B82F6'
+  },
+  'A': {
+    name: 'Artistic',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-600',
+    borderColor: 'border-green-200',
+    badgeBg: 'bg-green-500',
+    badgeText: 'text-green-700',
+    hexColor: '#10B981'
+  },
+  'S': {
+    name: 'Social',
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-600',
+    borderColor: 'border-purple-200',
+    badgeBg: 'bg-purple-500',
+    badgeText: 'text-purple-700',
+    hexColor: '#8B5CF6'
+  },
+  'E': {
+    name: 'Enterprising',
+    bgColor: 'bg-orange-100',
+    textColor: 'text-orange-600',
+    borderColor: 'border-orange-200',
+    badgeBg: 'bg-orange-500',
+    badgeText: 'text-orange-700',
+    hexColor: '#F97316'
+  },
+  'C': {
+    name: 'Conventional',
+    bgColor: 'bg-yellow-100',
+    textColor: 'text-yellow-600',
+    borderColor: 'border-yellow-200',
+    badgeBg: 'bg-yellow-500',
+    badgeText: 'text-yellow-700',
+    hexColor: '#EAB308'
+  },
+}
+
+const getColorClasses = (type: string) => {
+  const info = RIASEC_INFO[type] || RIASEC_INFO['S']
+  return {
+    bg: info.bgColor,
+    text: info.textColor,
+    border: info.borderColor,
+    badgeBg: info.badgeBg,
+    badgeText: info.badgeText,
+    hex: info.hexColor
+  }
+}
+
 export default function ProfilePage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<any>(null)
@@ -316,13 +386,13 @@ export default function ProfilePage() {
         {/* Profile Header Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sm:p-8 mb-6 relative overflow-hidden">
           {/* Decorative gradient background */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-100/50 to-purple-100/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/60 rounded-full blur-3xl -mr-32 -mt-32"></div>
           
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               {/* Profile Photo */}
               <div className="relative group">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg ring-4 ring-white">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 bg-blue-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg ring-4 ring-white">
                   {photoPreview || userProfile?.photo ? (
                     <img 
                       src={photoPreview || userProfile?.photo} 
@@ -439,31 +509,39 @@ export default function ProfilePage() {
         </div>
 
         {/* Grid Layout for Profile Sections - Left: RIASEC (smaller), Right: Job Interests + Skills (larger) */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6 items-stretch">
           {/* Left Column - RIASEC Type (smaller width) */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow">
+          <div className="lg:col-span-2 flex">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow w-full flex flex-col h-full">
               <div className="flex items-center gap-3 mb-5">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
                   <Briefcase className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-lg sm:text-xl font-bold text-gray-900">RIASEC Personality Type</h3>
               </div>
-              <div className="flex flex-col items-center sm:items-start gap-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transform hover:scale-105 transition-transform">
-                  <span className="text-3xl font-bold text-white">{profile.riasecType || 'N/A'}</span>
-                </div>
-                <div className="w-full bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-100">
-                  <p className="text-sm sm:text-base text-gray-800 font-medium leading-relaxed text-center sm:text-left">
-                    {profile.riasecType === 'R' && 'Realistic - Hands-on, practical, and enjoys working with tools'}
-                    {profile.riasecType === 'I' && 'Investigative - Analytical, curious, and enjoys research'}
-                    {profile.riasecType === 'A' && 'Artistic - Creative, expressive, and enjoys artistic activities'}
-                    {profile.riasecType === 'S' && 'Social - Helpful, friendly, and enjoys working with people'}
-                    {profile.riasecType === 'E' && 'Enterprising - Ambitious, persuasive, and enjoys leadership'}
-                    {profile.riasecType === 'C' && 'Conventional - Organized, detail-oriented, and enjoys structured work'}
-                    {!profile.riasecType && 'Not specified'}
-                  </p>
-                </div>
+              <div className="flex flex-col items-center sm:items-start gap-4 flex-1">
+                {(() => {
+                  const colors = getColorClasses(profile.riasecType || 'S')
+                  const riasecInfo = RIASEC_INFO[profile.riasecType || 'S'] || RIASEC_INFO['S']
+                  return (
+                    <>
+                      <div className={`w-20 h-20 ${colors.badgeBg} rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transform hover:scale-105 transition-transform`}>
+                        <span className="text-3xl font-bold text-white">{profile.riasecType || 'N/A'}</span>
+                      </div>
+                      <div className={`w-full ${colors.bg} rounded-xl p-4 border ${colors.border} flex-1`}>
+                        <p className={`text-sm sm:text-base ${colors.text} font-medium leading-relaxed text-center sm:text-left`}>
+                          {riasecInfo.name} - {profile.riasecType === 'R' && 'Hands-on, practical, and enjoys working with tools'}
+                          {profile.riasecType === 'I' && 'Analytical, curious, and enjoys research'}
+                          {profile.riasecType === 'A' && 'Creative, expressive, and enjoys artistic activities'}
+                          {profile.riasecType === 'S' && 'Helpful, friendly, and enjoys working with people'}
+                          {profile.riasecType === 'E' && 'Ambitious, persuasive, and enjoys leadership'}
+                          {profile.riasecType === 'C' && 'Organized, detail-oriented, and enjoys structured work'}
+                          {!profile.riasecType && 'Not specified'}
+                        </p>
+                      </div>
+                    </>
+                  )
+                })()}
               </div>
             </div>
           </div>
@@ -473,7 +551,7 @@ export default function ProfilePage() {
             {/* Job Interests */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 sm:p-8 hover:shadow-xl transition-shadow">
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
                   <Briefcase className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Job Interests</h3>
@@ -484,7 +562,7 @@ export default function ProfilePage() {
                     {profile.jobInterests?.map((interest: string, index: number) => (
                       <span
                         key={index}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-full text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all hover:scale-105"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all hover:scale-105"
                       >
                         {interest}
                         <button
@@ -504,7 +582,7 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       placeholder="Type a job interest and press Enter"
-                      className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
+                      className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white"
                       onKeyPress={(e) => {
                         if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                           const newInterests = [...(profile.jobInterests || []), e.currentTarget.value.trim()]
@@ -521,7 +599,7 @@ export default function ProfilePage() {
                     profile.jobInterests.map((interest: string, index: number) => (
                       <span
                         key={index}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-105 border border-purple-300/50"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-105 border border-blue-300/50"
                       >
                         {interest}
                       </span>
@@ -690,8 +768,8 @@ export default function ProfilePage() {
           </div>
           {isEditing ? (
             <div>
-              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-10 text-center mb-6 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 transition-all">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 sm:p-10 text-center mb-6 hover:border-blue-400 hover:bg-blue-50 transition-all">
+                <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-10 h-10 text-blue-600" />
                 </div>
                 <div className="mb-4">

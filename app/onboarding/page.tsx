@@ -389,7 +389,7 @@ export default function OnboardingPage() {
   const personalityProgress = (answeredQuestions / totalQuestions) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-6 sm:py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-12 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto">
         {/* Progress Bar - Only for Personality Test (Step 1) */}
         {step === 1 && (
@@ -411,7 +411,7 @@ export default function OnboardingPage() {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 sm:h-4 mb-2">
               <div 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 sm:h-4 rounded-full transition-all duration-500 shadow-sm"
+                className="bg-blue-600 h-3 sm:h-4 rounded-full transition-all duration-500 shadow-sm"
                 style={{ width: `${personalityProgress}%` }}
               />
             </div>
@@ -559,12 +559,12 @@ export default function OnboardingPage() {
                     {certificates.map((cert) => (
                       <span
                         key={cert}
-                        className="px-4 py-2 bg-purple-100 text-purple-700 rounded-full flex items-center gap-2"
+                        className="px-4 py-2 bg-blue-100 text-blue-700 rounded-full flex items-center gap-2"
                       >
                         {cert}
                         <button
                           onClick={() => removeCertificate(cert)}
-                          className="text-purple-700 hover:text-purple-900"
+                          className="text-blue-700 hover:text-blue-900"
                         >
                           ×
                         </button>
