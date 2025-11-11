@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, ArrowLeft, Upload, Link as LinkIcon } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Upload, Link as LinkIcon, Briefcase, MapPin, DollarSign, Clock, TrendingUp, X, Check, Lightbulb } from 'lucide-react'
 import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
+import { generateJobRecommendations, saveSelectedJob, JobRecommendation } from '@/app/utils/jobRecommendations'
 
 const RIASEC_QUESTIONS = [
   { id: 1, question: 'I enjoy working with tools and machinery', type: 'R' },
@@ -113,6 +114,8 @@ export default function OnboardingPage() {
   const [jobInterests, setJobInterests] = useState<string[]>([])
   const [customInterest, setCustomInterest] = useState('')
   const [userEmail, setUserEmail] = useState<string>('')
+  const [showJobRecommendationModal, setShowJobRecommendationModal] = useState(false)
+  const [recommendedJobs, setRecommendedJobs] = useState<JobRecommendation[]>([])
 
   useEffect(() => {
     // Check if user is logged in
@@ -339,6 +342,28 @@ export default function OnboardingPage() {
     // Dispatch custom event to update other pages
     window.dispatchEvent(new CustomEvent('profileUpdated', { detail: profileData }))
 
+    // Generate job recommendations
+    const recommendations = generateJobRecommendations(
+      calculateRiasecType(),
+      jobInterests,
+      skills
+    )
+    setRecommendedJobs(recommendations)
+    
+    // Show job recommendation modal instead of redirecting
+    setShowJobRecommendationModal(true)
+  }
+
+  const handleSelectJob = (job: JobRecommendation) => {
+    saveSelectedJob(job)
+    setShowJobRecommendationModal(false)
+    // Dispatch event to notify dashboard
+    window.dispatchEvent(new CustomEvent('jobSelected'))
+    router.push('/dashboard')
+  }
+
+  const handleSkipJobSelection = () => {
+    setShowJobRecommendationModal(false)
     router.push('/dashboard')
   }
 
@@ -754,6 +779,129 @@ export default function OnboardingPage() {
           </div>
         </div>
       </div>
+
+      {/* Job Recommendation Modal */}
+      {showJobRecommendationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between z-10">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">🎯 Job Recommendations</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Pilih job untuk memulai perjalanan karir yang lebih terarah. Perjalanan tracking progress akan fokus pada job yang Anda pilih.
+                </p>
+              </div>
+              <button
+                onClick={handleSkipJobSelection}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Important Notice */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900 mb-1">Penting untuk Memilih Job</p>
+                    <p className="text-xs text-blue-700">
+                      Dengan memilih job spesifik, perjalanan tracking progress, coaching, dan interview practice akan lebih terarah dan fokus. 
+                      Anda dapat mengubah pilihan job kapan saja dari halaman Job Recommendations.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {recommendedJobs.map((job) => (
+                  <div
+                    key={job.id}
+                    className="border-2 border-gray-200 rounded-xl p-5 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer"
+                    onClick={() => handleSelectJob(job)}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">{job.company.logo}</span>
+                          <div>
+                            <h3 className="font-bold text-lg text-gray-900">{job.title}</h3>
+                            <p className="text-sm text-gray-600">{job.company.name}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                            {job.matchScore}% Match
+                          </span>
+                          <span className="text-xs text-gray-500">{job.reason}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4" />
+                        <span>{job.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <DollarSign className="w-4 h-4" />
+                        <span>${job.salaryRange.min.toLocaleString()} - ${job.salaryRange.max.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="w-4 h-4" />
+                        <span>{job.type} • {job.experienceLevel}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {job.skills.slice(0, 3).map((skill, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {job.skills.length > 3 && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                          +{job.skills.length - 3} more
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleSelectJob(job)
+                      }}
+                      className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      Start Journey
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-yellow-800 text-center">
+                    <strong>Catatan:</strong> Jika Anda melewatkan pemilihan job sekarang, Anda dapat memilih job nanti dari halaman Job Recommendations. 
+                    Namun, untuk pengalaman tracking progress yang lebih baik, kami sarankan untuk memilih job sekarang.
+                  </p>
+                </div>
+                <button
+                  onClick={handleSkipJobSelection}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Explore More Options Later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Briefcase, User, Award, TrendingUp, RefreshCw, Edit, CheckCircle, ArrowRight, Lightbulb, Target, Hammer, Search, MessageCircle, Users, Clipboard, Sparkles, Star, Zap, BarChart3, Clock, BookOpen } from 'lucide-react'
+import { Briefcase, User, Award, TrendingUp, RefreshCw, Edit, ArrowRight, Lightbulb, Target, Hammer, Search, MessageCircle, Users, Clipboard, Sparkles, Star, Zap, BarChart3, Clock, BookOpen, MapPin, DollarSign, Building2, Heart, Video, GraduationCap, Trophy, CheckCircle2 } from 'lucide-react'
 import { getGamificationData } from '@/app/utils/gamification'
+import { getSelectedJob, JobRecommendation, calculateCareerPathProgress } from '@/app/utils/jobRecommendations'
 
 const RIASEC_INFO: Record<string, any> = {
   'R': {
@@ -158,6 +159,7 @@ export default function DashboardPage() {
   const [recommendedJobs, setRecommendedJobs] = useState<any[]>([])
   const [hoveredJob, setHoveredJob] = useState<number | null>(null)
   const [gamification, setGamification] = useState<any>(null)
+  const [selectedJob, setSelectedJob] = useState<JobRecommendation | null>(null)
 
   const loadProfile = useCallback(() => {
     // Try to load from userProfiles first (multi-user support)
@@ -251,14 +253,73 @@ export default function DashboardPage() {
       
       setRecommendedJobs(jobs.slice(0, 5))
     }
+    
+    // Note: Selected job will be loaded separately in useEffect
+    // to avoid timing issues and ensure proper loading
   }, [router])
+
+  // Load selected job function
+  const loadSelectedJob = useCallback(() => {
+    try {
+      // First try using the utility function
+      const savedJob = getSelectedJob()
+      if (savedJob && savedJob.id && savedJob.title && savedJob.company) {
+        setSelectedJob(savedJob)
+        return
+      }
+      
+      // Fallback: try to parse directly from localStorage
+      const rawData = localStorage.getItem('selectedJob')
+      if (rawData) {
+        try {
+          const parsed = JSON.parse(rawData)
+          // Validate that parsed data has required fields
+          if (parsed && parsed.id && parsed.title && parsed.company) {
+            setSelectedJob(parsed)
+          } else {
+            console.warn('Selected job data is incomplete:', parsed)
+            setSelectedJob(null)
+          }
+        } catch (e) {
+          console.error('Error parsing selectedJob from localStorage:', e)
+          setSelectedJob(null)
+        }
+      } else {
+        setSelectedJob(null)
+      }
+    } catch (e) {
+      console.error('Error loading selected job:', e)
+      setSelectedJob(null)
+    }
+  }, [])
 
   useEffect(() => {
     loadProfile()
+  }, [loadProfile])
+
+  // Load selected job separately to ensure it loads after profile
+  useEffect(() => {
+    // Small delay to ensure localStorage is accessible
+    const timer = setTimeout(() => {
+      loadSelectedJob()
+    }, 100)
     
+    return () => clearTimeout(timer)
+  }, [loadSelectedJob])
+
+  useEffect(() => {
     // Listen for profile updates (e.g., after retaking test)
     const handleProfileUpdate = (event: CustomEvent) => {
       loadProfile()
+      // Reload selected job after profile update
+      setTimeout(() => {
+        loadSelectedJob()
+      }, 100)
+    }
+    
+    // Listen for job selection updates
+    const handleJobSelected = () => {
+      loadSelectedJob()
     }
     
     // Listen for gamification updates
@@ -273,17 +334,46 @@ export default function DashboardPage() {
     
     window.addEventListener('profileUpdated', handleProfileUpdate as EventListener)
     window.addEventListener('gamificationUpdated', handleGamificationUpdate)
+    window.addEventListener('jobSelected', handleJobSelected)
     
     return () => {
       window.removeEventListener('profileUpdated', handleProfileUpdate as EventListener)
       window.removeEventListener('gamificationUpdated', handleGamificationUpdate)
+      window.removeEventListener('jobSelected', handleJobSelected)
     }
-  }, [loadProfile])
+  }, [loadProfile, loadSelectedJob])
 
   const handleRetakeTest = () => {
     // Add retake parameter to allow access even if onboarding is completed
     router.push('/onboarding?retake=true')
   }
+
+  // Calculate career path progress if job is selected (outside IIFE for proper scope)
+  const careerPathProgress = selectedJob && userProfile
+    ? calculateCareerPathProgress(selectedJob, userProfile)
+    : null
+  
+  // Use career path progress percentage if available, otherwise use EXP percentage
+  const progressPercentage = careerPathProgress 
+    ? careerPathProgress.progressPercentage
+    : (gamification ? (gamification.currentExp / gamification.expNeeded) * 100 : 0)
+  
+  // For display, use career path progress if available
+  const displayProgress = careerPathProgress
+    ? {
+        current: careerPathProgress.completedSteps,
+        total: careerPathProgress.totalSteps,
+        percentage: careerPathProgress.progressPercentage,
+        label: 'Career Path Progress',
+        subtitle: `${careerPathProgress.completedSteps} of ${careerPathProgress.totalSteps} steps completed`
+      }
+    : {
+        current: gamification?.currentExp || 0,
+        total: gamification?.expNeeded || 100,
+        percentage: progressPercentage,
+        label: 'EXP Progress',
+        subtitle: `${gamification?.totalExp || 0} total EXP earned`
+      }
 
   const handleUpdateSkills = () => {
     router.push('/dashboard/profile')
@@ -292,6 +382,23 @@ export default function DashboardPage() {
   const handleUpdateInterest = () => {
     router.push('/dashboard/profile')
   }
+
+  // Debug: Log selectedJob state in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Selected Job State:', selectedJob)
+      const rawData = localStorage.getItem('selectedJob')
+      console.log('LocalStorage selectedJob:', rawData ? 'Exists' : 'Not found')
+      if (rawData) {
+        try {
+          const parsed = JSON.parse(rawData)
+          console.log('Parsed selectedJob:', parsed)
+        } catch (e) {
+          console.error('Error parsing:', e)
+        }
+      }
+    }
+  }, [selectedJob])
 
   if (!userProfile || !riasecInfo) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
@@ -340,103 +447,101 @@ export default function DashboardPage() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 flex items-center gap-2">
+                {getGreeting()}, {userProfile.name || 'User'}!
+                <span className="text-3xl sm:text-4xl md:text-5xl">👋</span>
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">Here's your personalized career dashboard</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Selected Job Tracking Card */}
+        {selectedJob ? (
+          <div className="mb-4 sm:mb-6 bg-gradient-to-br from-blue-50/90 to-purple-50/90 backdrop-blur-sm rounded-xl shadow-md p-4 border border-blue-200/70">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-                    {getGreeting()}, {userProfile.name || 'User'}!
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-0.5">Here's your personalized career dashboard</p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h2 className="text-lg font-bold text-gray-900">Tracking: {selectedJob.title}</h2>
+                    <span className="px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                      {selectedJob.matchScore}% Match
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5" />
+                    {selectedJob.company.name} • {selectedJob.location}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/progress"
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                View Progress
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+              <div className="bg-white/70 rounded-lg p-2.5 border border-gray-200/40">
+                <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-0.5">
+                  <DollarSign className="w-3.5 h-3.5" />
+                  <span>Salary Range</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-900">
+                  ${selectedJob.salaryRange.min.toLocaleString()} - ${selectedJob.salaryRange.max.toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-white/70 rounded-lg p-2.5 border border-gray-200/40">
+                <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-0.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Type</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-900">{selectedJob.type} • {selectedJob.experienceLevel}</p>
+              </div>
+              <div className="bg-white/70 rounded-lg p-2.5 border border-gray-200/40">
+                <div className="flex items-center gap-1.5 text-xs text-gray-600 mb-0.5">
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Required Skills</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedJob.skills.slice(0, 3).map((skill, idx) => (
+                    <span key={idx} className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">
+                      {skill}
+                    </span>
+                  ))}
+                  {selectedJob.skills.length > 3 && (
+                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+                      +{selectedJob.skills.length - 3}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-            
-            {/* Profile Completion Badge */}
-            <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200 sm:w-64">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">Profile Completion</span>
-                <span className="text-sm font-bold text-blue-600">{profileCompletion}%</span>
+          </div>
+        ) : (
+          <div className="mb-4 sm:mb-6 bg-white/80 backdrop-blur-md rounded-xl p-6 border border-gray-300/60 shadow-sm">
+            <div className="text-center max-w-md mx-auto">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100/80 flex items-center justify-center">
+                <Briefcase className="w-6 h-6 text-gray-500" />
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
-                  style={{ width: `${profileCompletion}%` }}
-                ></div>
-              </div>
-              {profileCompletion < 100 && (
-                <p className="text-xs text-gray-500 mt-2">
-                  Complete your profile for better recommendations
-                </p>
-              )}
+              <h3 className="text-lg font-semibold text-gray-900 mb-1.5">No Job Selected</h3>
+              <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                Choose a job recommendation to begin tracking your progress
+              </p>
+              <Link
+                href="/dashboard/jobs"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-800 transition-colors shadow-sm"
+              >
+                Browse Jobs
+              </Link>
             </div>
           </div>
-        </div>
-
-        {/* Quick Stats Cards - Enhanced */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-6 sm:mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 sm:p-6 text-white transform hover:scale-105 transition-all duration-300 cursor-pointer group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition">
-                <Briefcase className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
-              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-bold mb-1">{recommendedJobs.length}</div>
-            <div className="text-sm opacity-90">Job Matches</div>
-            <Link href="/dashboard/jobs" className="text-xs opacity-75 hover:opacity-100 mt-2 inline-flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-5 sm:p-6 text-white transform hover:scale-105 transition-all duration-300 cursor-pointer group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition">
-                <Award className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
-              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-bold mb-1">{userProfile.skills?.length || 0}</div>
-            <div className="text-sm opacity-90">Skills Added</div>
-            <button onClick={handleUpdateSkills} className="text-xs opacity-75 hover:opacity-100 mt-2 inline-flex items-center gap-1">
-              Manage <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-5 sm:p-6 text-white transform hover:scale-105 transition-all duration-300 cursor-pointer group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition">
-                <Target className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
-              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-bold mb-1">{userProfile.jobInterests?.length || 0}</div>
-            <div className="text-sm opacity-90">Job Interests</div>
-            <button onClick={handleUpdateInterest} className="text-xs opacity-75 hover:opacity-100 mt-2 inline-flex items-center gap-1">
-              Update <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-5 sm:p-6 text-white transform hover:scale-105 transition-all duration-300 cursor-pointer group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition">
-                <BarChart3 className="w-6 h-6 sm:w-7 sm:h-7" />
-              </div>
-              <Star className="w-5 h-5 sm:w-6 sm:h-6 opacity-80" />
-            </div>
-            <div className="text-3xl sm:text-4xl font-bold mb-1">{riasecInfo?.name?.charAt(0) || 'N/A'}</div>
-            <div className="text-sm opacity-90">RIASEC Type</div>
-            <button onClick={handleRetakeTest} className="text-xs opacity-75 hover:opacity-100 mt-2 inline-flex items-center gap-1">
-              Retake test <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* RIASEC Type Card with Visualization */}
         {riasecInfo && (() => {
           const colors = getColorClasses(userProfile.riasecType)
-          const expPercentage = gamification ? (gamification.currentExp / gamification.expNeeded) * 100 : 0
           
           return (
             <div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-xl shadow-xl p-6 sm:p-8 mb-6 sm:mb-8 border border-gray-100 relative overflow-hidden">
@@ -479,21 +584,26 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   
-                  {/* EXP Progress Section */}
-                  {gamification && (
+                  {/* Progress Section - Career Path or EXP */}
+                  {(gamification || careerPathProgress) && (
                     <div className="bg-blue-50 rounded-xl p-4 mb-6 border border-blue-200 shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Sparkles className="w-5 h-5 text-blue-600" />
-                          <h3 className="font-semibold text-blue-600 text-sm">Progress Level {gamification.level}</h3>
+                          <h3 className="font-semibold text-blue-600 text-sm">
+                            {careerPathProgress 
+                              ? `Career Path Progress`
+                              : `Progress Level ${gamification?.level || 1}`
+                            }
+                          </h3>
                         </div>
                         <span className="text-xs text-blue-700 font-bold">
-                          {gamification.currentExp}/{gamification.expNeeded} EXP
+                          {displayProgress.current}/{displayProgress.total} {careerPathProgress ? 'Steps' : 'EXP'}
                         </span>
                       </div>
                       <div className="flex items-center gap-4">
                         <SimpleCircularProgress 
-                          percentage={expPercentage} 
+                          percentage={displayProgress.percentage} 
                           size={70} 
                           strokeWidth={6}
                           color="#3B82F6"
@@ -503,13 +613,18 @@ export default function DashboardPage() {
                             <div
                               className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
                               style={{ 
-                                width: `${Math.min(expPercentage, 100)}%`
+                                width: `${Math.min(displayProgress.percentage, 100)}%`
                               }}
                             />
                           </div>
                           <p className="text-xs text-gray-600">
-                            {gamification.totalExp} total EXP earned
+                            {displayProgress.subtitle}
                           </p>
+                          {careerPathProgress && selectedJob && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Towards {selectedJob.title} at {selectedJob.company.name}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -601,69 +716,6 @@ export default function DashboardPage() {
           )
         })()}
 
-        {/* Quick Actions Section */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-yellow-500" />
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Quick Actions</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
-            <button
-              onClick={handleUpdateSkills}
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 text-left group border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-md">
-                  <Edit className="w-7 h-7 text-blue-600" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Update Skills</h3>
-              <p className="text-sm text-gray-600 mb-3">Add or modify your skills to get better job recommendations</p>
-              <div className="flex items-center gap-2 text-xs text-blue-600 font-medium">
-                <span>Manage skills</span>
-                <ArrowRight className="w-3 h-3" />
-              </div>
-            </button>
-
-            <button
-              onClick={handleUpdateInterest}
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 text-left group border border-gray-100 hover:border-purple-200 transform hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-md">
-                  <Target className="w-7 h-7 text-purple-600" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Update Interests</h3>
-              <p className="text-sm text-gray-600 mb-3">Update your job interests to discover more opportunities</p>
-              <div className="flex items-center gap-2 text-xs text-purple-600 font-medium">
-                <span>Edit interests</span>
-                <ArrowRight className="w-3 h-3" />
-              </div>
-            </button>
-
-            <Link
-              href="/dashboard/interview"
-              className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 text-left group border border-gray-100 hover:border-green-200 transform hover:-translate-y-1"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-green-100 to-green-200 rounded-xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform shadow-md">
-                  <BookOpen className="w-7 h-7 text-green-600" />
-                </div>
-                <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">Practice Interview</h3>
-              <p className="text-sm text-gray-600 mb-3">Improve your interview skills with AI-powered mock interviews</p>
-              <div className="flex items-center gap-2 text-xs text-green-600 font-medium">
-                <span>Start practice</span>
-                <ArrowRight className="w-3 h-3" />
-              </div>
-            </Link>
-          </div>
-        </div>
-
         {/* Job Matching Information - Enhanced */}
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 border border-gray-100 relative overflow-hidden">
           {/* Decorative background */}
@@ -754,88 +806,6 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Suitable Job Categories - Enhanced */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 mb-6 sm:mb-8 border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                Suitable Job Categories
-              </h2>
-              <p className="text-sm text-gray-600">Discover career paths aligned with your {riasecInfo.name} personality</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-6">
-            {riasecInfo.suitableJobs.map((job: string, index: number) => (
-              <div
-                key={index}
-                className="group flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border-2 border-gray-100 hover:border-blue-300 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <span className="text-sm sm:text-base font-semibold text-gray-800 group-hover:text-blue-600 transition-colors flex-1">
-                  {job}
-                </span>
-                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-center">
-            <Link
-              href="/dashboard/jobs"
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all font-semibold text-sm sm:text-base shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Explore All Job Recommendations
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Next Steps Section */}
-        <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 text-white relative overflow-hidden">
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -ml-24 -mb-24"></div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold">What's Next?</h2>
-            </div>
-            <p className="text-blue-100 mb-6 text-lg">
-              Take the next steps in your career journey with personalized recommendations and tools.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link
-                href="/dashboard/interview"
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-5 hover:bg-white/20 transition-all border border-white/20 hover:border-white/40 transform hover:-translate-y-1"
-              >
-                <BookOpen className="w-8 h-8 mb-3" />
-                <h3 className="font-bold text-lg mb-2">Practice Interviews</h3>
-                <p className="text-sm text-blue-100">Improve your interview skills with AI-powered mock interviews</p>
-              </Link>
-              <Link
-                href="/dashboard/coaching"
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-5 hover:bg-white/20 transition-all border border-white/20 hover:border-white/40 transform hover:-translate-y-1"
-              >
-                <Users className="w-8 h-8 mb-3" />
-                <h3 className="font-bold text-lg mb-2">Career Coaching</h3>
-                <p className="text-sm text-blue-100">Get personalized advice from expert career coaches</p>
-              </Link>
-              <Link
-                href="/dashboard/companies"
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-5 hover:bg-white/20 transition-all border border-white/20 hover:border-white/40 transform hover:-translate-y-1"
-              >
-                <Briefcase className="w-8 h-8 mb-3" />
-                <h3 className="font-bold text-lg mb-2">Connect Companies</h3>
-                <p className="text-sm text-blue-100">Explore and connect with companies that match your profile</p>
-              </Link>
-            </div>
           </div>
         </div>
       </div>

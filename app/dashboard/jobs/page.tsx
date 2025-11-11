@@ -2,123 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { DollarSign, MapPin, Briefcase, CheckCircle } from 'lucide-react'
-
-const JOB_DATA: Record<string, any> = {
-  'R': [
-    {
-      title: 'Mechanical Engineer',
-      description: 'Design and develop mechanical systems and components',
-      responsibilities: ['Design mechanical systems', 'Test prototypes', 'Create technical drawings', 'Collaborate with cross-functional teams'],
-      skills: ['CAD Software', 'Engineering Principles', 'Problem Solving', 'Project Management'],
-      salary: '$70,000 - $100,000',
-      companies: ['Boeing', 'Tesla', 'Caterpillar']
-    },
-    {
-      title: 'Civil Engineer',
-      description: 'Plan and design infrastructure projects',
-      responsibilities: ['Design infrastructure', 'Manage construction projects', 'Ensure safety standards', 'Budget planning'],
-      skills: ['AutoCAD', 'Structural Analysis', 'Project Management', 'Communication'],
-      salary: '$65,000 - $95,000',
-      companies: ['AECOM', 'Bechtel', 'Fluor Corporation']
-    }
-  ],
-  'I': [
-    {
-      title: 'Data Scientist',
-      description: 'Analyze complex data to help organizations make decisions',
-      responsibilities: ['Analyze large datasets', 'Build predictive models', 'Create data visualizations', 'Present findings to stakeholders'],
-      skills: ['Python', 'Machine Learning', 'Statistics', 'SQL', 'Data Visualization'],
-      salary: '$100,000 - $150,000',
-      companies: ['Google', 'Meta', 'Amazon', 'Microsoft']
-    },
-    {
-      title: 'Research Scientist',
-      description: 'Conduct research and experiments in scientific fields',
-      responsibilities: ['Design experiments', 'Collect and analyze data', 'Publish research papers', 'Collaborate with research teams'],
-      skills: ['Research Methods', 'Data Analysis', 'Scientific Writing', 'Critical Thinking'],
-      salary: '$80,000 - $120,000',
-      companies: ['MIT', 'Stanford Research', 'IBM Research']
-    }
-  ],
-  'A': [
-    {
-      title: 'UI/UX Designer',
-      description: 'Create intuitive and beautiful user interfaces',
-      responsibilities: ['Design user interfaces', 'Create wireframes and prototypes', 'Conduct user research', 'Collaborate with developers'],
-      skills: ['Figma', 'Adobe XD', 'User Research', 'Prototyping', 'Design Systems'],
-      salary: '$75,000 - $120,000',
-      companies: ['Apple', 'Google', 'Adobe', 'Figma']
-    },
-    {
-      title: 'Graphic Designer',
-      description: 'Create visual concepts to communicate ideas',
-      responsibilities: ['Design marketing materials', 'Create brand identities', 'Develop visual concepts', 'Work with clients'],
-      skills: ['Adobe Creative Suite', 'Typography', 'Color Theory', 'Branding'],
-      salary: '$50,000 - $85,000',
-      companies: ['Pentagram', 'IDEO', 'Landor', 'Wolff Olins']
-    }
-  ],
-  'S': [
-    {
-      title: 'Software Engineer',
-      description: 'Develop software applications and systems',
-      responsibilities: ['Write clean code', 'Debug and test software', 'Collaborate with team', 'Maintain existing systems'],
-      skills: ['Programming Languages', 'Software Development', 'Problem Solving', 'Team Collaboration'],
-      salary: '$90,000 - $150,000',
-      companies: ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple']
-    },
-    {
-      title: 'Teacher/Educator',
-      description: 'Educate and inspire students',
-      responsibilities: ['Plan lessons', 'Teach students', 'Assess progress', 'Support student development'],
-      skills: ['Communication', 'Patience', 'Subject Knowledge', 'Classroom Management'],
-      salary: '$45,000 - $75,000',
-      companies: ['Public Schools', 'Private Schools', 'Online Education Platforms']
-    }
-  ],
-  'E': [
-    {
-      title: 'Product Manager',
-      description: 'Lead product development and strategy',
-      responsibilities: ['Define product vision', 'Prioritize features', 'Work with engineering teams', 'Analyze market trends'],
-      skills: ['Product Strategy', 'Agile Methodology', 'Stakeholder Management', 'Data Analysis'],
-      salary: '$110,000 - $180,000',
-      companies: ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple']
-    },
-    {
-      title: 'Sales Manager',
-      description: 'Lead sales teams and drive revenue',
-      responsibilities: ['Manage sales team', 'Develop sales strategies', 'Build client relationships', 'Meet revenue targets'],
-      skills: ['Sales Techniques', 'Leadership', 'Negotiation', 'CRM Software'],
-      salary: '$80,000 - $140,000',
-      companies: ['Salesforce', 'Oracle', 'SAP', 'Microsoft']
-    }
-  ],
-  'C': [
-    {
-      title: 'Accountant',
-      description: 'Manage financial records and ensure compliance',
-      responsibilities: ['Prepare financial statements', 'Ensure tax compliance', 'Audit financial records', 'Provide financial advice'],
-      skills: ['Accounting Principles', 'Tax Law', 'Financial Software', 'Attention to Detail'],
-      salary: '$55,000 - $90,000',
-      companies: ['Deloitte', 'PwC', 'EY', 'KPMG']
-    },
-    {
-      title: 'Data Analyst',
-      description: 'Analyze data to support business decisions',
-      responsibilities: ['Collect and analyze data', 'Create reports', 'Identify trends', 'Support decision-making'],
-      skills: ['Excel', 'SQL', 'Data Visualization', 'Statistical Analysis'],
-      salary: '$60,000 - $95,000',
-      companies: ['Amazon', 'Microsoft', 'IBM', 'Accenture']
-    }
-  ]
-}
+import { DollarSign, MapPin, Briefcase, CheckCircle, Building2, Clock, Target, ArrowRight, TrendingUp, BookOpen, Users, Award, Calendar } from 'lucide-react'
+import { generateJobRecommendations, saveSelectedJob, getSelectedJob, JobRecommendation, CareerPathStep } from '@/app/utils/jobRecommendations'
 
 export default function JobsPage() {
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<any>(null)
-  const [recommendedJobs, setRecommendedJobs] = useState<any[]>([])
+  const [recommendedJobs, setRecommendedJobs] = useState<JobRecommendation[]>([])
+  const [selectedJob, setSelectedJob] = useState<JobRecommendation | null>(null)
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
 
   useEffect(() => {
     const profile = localStorage.getItem('userProfile')
@@ -129,108 +21,234 @@ export default function JobsPage() {
     const parsed = JSON.parse(profile)
     setUserProfile(parsed)
     
-    // Get recommended jobs based on RIASEC type
-    const jobs = JOB_DATA[parsed.riasecType] || []
+    // Generate job recommendations using utility function
+    const jobs = generateJobRecommendations(
+      parsed.riasecType || 'I',
+      parsed.jobInterests || [],
+      parsed.skills || []
+    )
+    setRecommendedJobs(jobs)
     
-    // Also add jobs based on interests
-    const interestJobs: any[] = []
-    if (parsed.jobInterests?.includes('Software Engineer')) {
-      interestJobs.push({
-        title: 'Software Engineer',
-        description: 'Develop software applications and systems',
-        responsibilities: ['Write clean code', 'Debug and test software', 'Collaborate with team', 'Maintain existing systems'],
-        skills: ['Programming Languages', 'Software Development', 'Problem Solving', 'Team Collaboration'],
-        salary: '$90,000 - $150,000',
-        companies: ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple']
-      })
+    // Load currently selected job if exists
+    const currentSelectedJob = getSelectedJob()
+    if (currentSelectedJob) {
+      setSelectedJob(currentSelectedJob)
     }
-    if (parsed.jobInterests?.includes('UI/UX Designer')) {
-      interestJobs.push({
-        title: 'UI/UX Designer',
-        description: 'Create intuitive and beautiful user interfaces',
-        responsibilities: ['Design user interfaces', 'Create wireframes and prototypes', 'Conduct user research', 'Collaborate with developers'],
-        skills: ['Figma', 'Adobe XD', 'User Research', 'Prototyping', 'Design Systems'],
-        salary: '$75,000 - $120,000',
-        companies: ['Apple', 'Google', 'Adobe', 'Figma']
-      })
-    }
-    
-    setRecommendedJobs([...jobs, ...interestJobs].slice(0, 5))
   }, [router])
+
+  const handleSelectJob = (job: JobRecommendation) => {
+    saveSelectedJob(job)
+    setSelectedJob(job)
+    // Dispatch event to notify dashboard
+    window.dispatchEvent(new CustomEvent('jobSelected'))
+    // Show success message
+    alert(`Successfully selected ${job.title} at ${job.company.name}! Your progress tracking will now focus on this role.`)
+    // Redirect to dashboard
+    router.push('/dashboard')
+  }
 
   if (!userProfile) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>
   }
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto">
-
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Job Recommendations</h1>
-          <p className="text-sm sm:text-base text-gray-600">Based on your RIASEC type ({userProfile.riasecType}) and interests</p>
+          <p className="text-sm sm:text-base text-gray-600">
+            Based on your RIASEC type ({userProfile.riasecType}) and interests. Select a job to start tracking your progress.
+          </p>
         </div>
 
-        <div className="space-y-4 sm:space-y-6">
-          {recommendedJobs.map((job, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-lg p-4 sm:p-6 md:p-8 hover:shadow-xl transition">
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-3 sm:gap-4 mb-4">
-                <div className="flex-1">
-                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">{job.title}</h2>
-                  <p className="text-sm sm:text-base text-gray-600">{job.description}</p>
-                </div>
-                <div className="text-left sm:text-right">
-                  <div className="flex items-center gap-2 text-green-600 font-semibold mb-2 text-sm sm:text-base">
-                    <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
-                    {job.salary}
-                  </div>
+        {/* Currently Selected Job Banner */}
+        {selectedJob && (
+          <div className="mb-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-4 border-2 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div>
+                  <p className="text-sm text-gray-600">Currently Tracking:</p>
+                  <p className="font-bold text-gray-900">{selectedJob.title} at {selectedJob.company.name}</p>
                 </div>
               </div>
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm"
+              >
+                View Dashboard
+              </button>
+            </div>
+          </div>
+        )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
-                    <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Key Responsibilities
-                  </h3>
-                  <ul className="space-y-2">
-                    {job.responsibilities.map((resp: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-gray-600">
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                        <span>{resp}</span>
-                      </li>
-                    ))}
-                  </ul>
+        {/* Job Recommendations */}
+        <div className="space-y-6">
+          {recommendedJobs.map((job) => {
+            const isSelected = selectedJob?.id === job.id
+            const isExpanded = expandedJobId === job.id
+            
+            return (
+              <div
+                key={job.id}
+                className={`bg-white rounded-2xl shadow-lg border-2 transition-all ${
+                  isSelected 
+                    ? 'border-green-500 bg-green-50/30' 
+                    : 'border-gray-200 hover:border-blue-300 hover:shadow-xl'
+                }`}
+              >
+                <div className="p-6">
+                  {/* Job Header */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-4">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h2 className="text-2xl font-bold text-gray-900">{job.title}</h2>
+                          {isSelected && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                              Currently Selected
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-600 flex items-center gap-2 mb-2">
+                          <Building2 className="w-4 h-4" />
+                          {job.company.name} • <MapPin className="w-4 h-4" /> {job.location}
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                            {job.matchScore}% Match
+                          </span>
+                          <span className="text-sm text-gray-500">{job.reason}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-center gap-2 text-green-600 font-semibold mb-2">
+                        <DollarSign className="w-5 h-5" />
+                        <span className="text-lg">
+                          ${job.salaryRange.min.toLocaleString()} - ${job.salaryRange.max.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <Clock className="w-4 h-4 inline mr-1" />
+                        {job.type} • {job.experienceLevel}
+                      </div>
+                    </div>
                 </div>
 
-                <div>
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2 text-sm sm:text-base">
-                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Required Skills
-                  </h3>
+                  {/* Job Description */}
+                  <p className="text-gray-700 mb-4">{job.description}</p>
+
+                  {/* Skills */}
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">Required Skills:</h3>
                   <div className="flex flex-wrap gap-2">
-                    {job.skills.map((skill: string, i: number) => (
-                      <span key={i} className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm">
+                      {job.skills.map((skill, idx) => (
+                        <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                         {skill}
                       </span>
                     ))}
+                    </div>
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 mb-3 mt-4 sm:mt-6 flex items-center gap-2 text-sm sm:text-base">
-                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-                    Recommended Companies
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {job.companies.map((company: string, i: number) => (
-                      <span key={i} className="px-2 sm:px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs sm:text-sm">
-                        {company}
+                  {/* Expandable Career Path */}
+                  {job.careerPath && job.careerPath.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
+                        className="flex items-center justify-between w-full p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg hover:from-blue-100 hover:to-purple-100 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-blue-600" />
+                          <span className="font-semibold text-gray-900">Career Path to {job.title}</span>
+                        </div>
+                        <ArrowRight 
+                          className={`w-5 h-5 text-gray-600 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                        />
+                      </button>
+                      
+                      {isExpanded && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <div className="space-y-4">
+                            {job.careerPath.map((step: CareerPathStep, idx: number) => (
+                              <div key={idx} className="flex gap-4">
+                                <div className="flex-shrink-0">
+                                  <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    {step.step}
+                                  </div>
+                                  {idx < job.careerPath!.length - 1 && (
+                                    <div className="w-0.5 h-full bg-gray-300 mx-auto mt-2" style={{ height: 'calc(100% - 2.5rem)' }}></div>
+                                  )}
+                                </div>
+                                <div className="flex-1 pb-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-bold text-gray-900">{step.title}</h4>
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                                      {step.duration}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-3">{step.description}</p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                      <p className="text-xs font-semibold text-gray-700 mb-1">Skills to Learn:</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {step.skills.map((skill, skillIdx) => (
+                                          <span key={skillIdx} className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                                            {skill}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-semibold text-gray-700 mb-1">Resources:</p>
+                                      <div className="flex flex-wrap gap-1">
+                                        {step.resources.map((resource, resIdx) => (
+                                          <span key={resIdx} className="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs">
+                                            {resource}
                       </span>
                     ))}
+                                      </div>
                   </div>
                 </div>
               </div>
             </div>
           ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 mt-4">
+                    {!isSelected ? (
+                      <button
+                        onClick={() => handleSelectJob(job)}
+                        className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Target className="w-5 h-5" />
+                        Select This Job
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => router.push('/dashboard')}
+                        className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <TrendingUp className="w-5 h-5" />
+                        View Progress
+                      </button>
+                    )}
+                    <button
+                      onClick={() => router.push(`/dashboard/interview`)}
+                      className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="w-5 h-5" />
+                      Practice Interview
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         {recommendedJobs.length === 0 && (

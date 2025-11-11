@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, BookOpen, MessageCircle, Star, Clock, CheckCircle, User, GraduationCap, Award, Mail } from 'lucide-react'
+import { Users, BookOpen, MessageCircle, Star, Clock, CheckCircle, User, GraduationCap, Award, Mail, Briefcase, Building2 } from 'lucide-react'
+import { getSelectedJob, JobRecommendation } from '@/app/utils/jobRecommendations'
 
 interface Coach {
   id: string
@@ -90,38 +91,66 @@ const COACHES: Coach[] = [
 ]
 
 const COACHING_CLASSES: CoachingClass[] = [
+  // Technical Classes
   {
     id: 'class1',
-    title: 'Career Transition Masterclass',
-    description: 'Learn how to successfully transition into a new career field with confidence and strategy.',
-    coach: COACHES[2],
-    schedule: 'Every Monday & Wednesday, 7:00 PM - 8:30 PM',
-    duration: '8 weeks',
-    maxStudents: 30,
-    currentStudents: 24,
-    category: 'Career Change',
-    level: 'Intermediate',
-    price: 'Free',
-  },
-  {
-    id: 'class2',
-    title: 'Tech Career Accelerator',
-    description: 'Accelerate your tech career with proven strategies from industry experts.',
+    title: 'Software Engineering Fundamentals',
+    description: 'Master core programming concepts, algorithms, and software development best practices. Perfect for aspiring software engineers.',
     coach: COACHES[0],
     schedule: 'Every Tuesday & Thursday, 6:00 PM - 7:30 PM',
     duration: '10 weeks',
     maxStudents: 25,
     currentStudents: 18,
     category: 'Technology',
+    level: 'Intermediate',
+    price: 'Free',
+  },
+  {
+    id: 'class2',
+    title: 'Tech Career Accelerator',
+    description: 'Accelerate your tech career with proven strategies from industry experts. Learn how to break into tech and advance quickly.',
+    coach: COACHES[0],
+    schedule: 'Every Monday & Wednesday, 7:00 PM - 8:30 PM',
+    duration: '8 weeks',
+    maxStudents: 30,
+    currentStudents: 24,
+    category: 'Technology',
     level: 'Advanced',
     price: 'Free',
   },
   {
     id: 'class3',
-    title: 'Leadership Excellence Program',
-    description: 'Develop your leadership skills and advance to management positions.',
-    coach: COACHES[3],
+    title: 'UI/UX Design Mastery',
+    description: 'Learn user interface and user experience design principles, tools, and methodologies. Build a professional design portfolio.',
+    coach: COACHES[0],
     schedule: 'Every Saturday, 10:00 AM - 12:00 PM',
+    duration: '12 weeks',
+    maxStudents: 20,
+    currentStudents: 15,
+    category: 'Technology',
+    level: 'Beginner',
+    price: 'Free',
+  },
+  {
+    id: 'class4',
+    title: 'Data Science & Analytics',
+    description: 'Master data analysis, machine learning, and statistical modeling. Learn tools like Python, SQL, and data visualization.',
+    coach: COACHES[0],
+    schedule: 'Every Friday, 7:00 PM - 9:00 PM',
+    duration: '10 weeks',
+    maxStudents: 25,
+    currentStudents: 20,
+    category: 'Technology',
+    level: 'Intermediate',
+    price: 'Free',
+  },
+  // Leadership & Management
+  {
+    id: 'class5',
+    title: 'Leadership Excellence Program',
+    description: 'Develop your leadership skills and advance to management positions. Learn team management, decision-making, and strategic thinking.',
+    coach: COACHES[3],
+    schedule: 'Every Saturday, 2:00 PM - 4:00 PM',
     duration: '12 weeks',
     maxStudents: 20,
     currentStudents: 15,
@@ -130,41 +159,68 @@ const COACHING_CLASSES: CoachingClass[] = [
     price: 'Free',
   },
   {
-    id: 'class4',
-    title: 'Entrepreneurship Bootcamp',
-    description: 'From idea to launch: Learn how to start and grow your own business.',
-    coach: COACHES[1],
-    schedule: 'Every Friday, 7:00 PM - 9:00 PM',
-    duration: '6 weeks',
-    maxStudents: 35,
-    currentStudents: 28,
-    category: 'Business',
-    level: 'Beginner',
+    id: 'class6',
+    title: 'Project Management Professional',
+    description: 'Master project management methodologies, Agile/Scrum, and team coordination. Essential for managers and team leads.',
+    coach: COACHES[3],
+    schedule: 'Every Wednesday, 6:00 PM - 8:00 PM',
+    duration: '8 weeks',
+    maxStudents: 30,
+    currentStudents: 22,
+    category: 'Leadership',
+    level: 'Intermediate',
     price: 'Free',
   },
+  // Soft Skills & Professional Development
   {
-    id: 'class5',
+    id: 'class7',
     title: 'Resume & Interview Mastery',
-    description: 'Master the art of resume writing and interview techniques to land your dream job.',
+    description: 'Master the art of resume writing and interview techniques to land your dream job. Learn how to stand out in applications.',
     coach: COACHES[2],
     schedule: 'Every Sunday, 2:00 PM - 4:00 PM',
     duration: '4 weeks',
     maxStudents: 40,
     currentStudents: 32,
-    category: 'Job Search',
+    category: 'Professional Development',
     level: 'Beginner',
     price: 'Free',
   },
   {
-    id: 'class6',
+    id: 'class8',
     title: 'Networking & Personal Branding',
-    description: 'Build your professional network and personal brand to unlock career opportunities.',
+    description: 'Build your professional network and personal brand to unlock career opportunities. Learn LinkedIn optimization and networking strategies.',
     coach: COACHES[1],
     schedule: 'Every Wednesday, 8:00 PM - 9:30 PM',
     duration: '5 weeks',
     maxStudents: 30,
     currentStudents: 22,
     category: 'Professional Development',
+    level: 'Intermediate',
+    price: 'Free',
+  },
+  {
+    id: 'class9',
+    title: 'Effective Communication Skills',
+    description: 'Enhance your communication skills for professional success. Learn presentation, negotiation, and cross-functional collaboration.',
+    coach: COACHES[3],
+    schedule: 'Every Thursday, 7:00 PM - 8:30 PM',
+    duration: '6 weeks',
+    maxStudents: 35,
+    currentStudents: 28,
+    category: 'Professional Development',
+    level: 'Beginner',
+    price: 'Free',
+  },
+  {
+    id: 'class10',
+    title: 'Career Transition Masterclass',
+    description: 'Learn how to successfully transition into a new career field with confidence and strategy. Perfect for career changers.',
+    coach: COACHES[2],
+    schedule: 'Every Monday, 7:00 PM - 8:30 PM',
+    duration: '8 weeks',
+    maxStudents: 30,
+    currentStudents: 24,
+    category: 'Career Change',
     level: 'Intermediate',
     price: 'Free',
   },
@@ -179,6 +235,85 @@ export default function CoachingPage() {
   const [selectedClass, setSelectedClass] = useState<CoachingClass | null>(null)
   const [showAdviceModal, setShowAdviceModal] = useState(false)
   const [newAdvice, setNewAdvice] = useState('')
+  const [selectedJob, setSelectedJob] = useState<JobRecommendation | null>(null)
+
+  // Get relevant coaching classes based on selected job
+  const getRelevantClasses = (job: JobRecommendation | null, allClasses: CoachingClass[]): CoachingClass[] => {
+    if (!job) {
+      // If no job selected, show all classes including soft skills
+      return allClasses
+    }
+    
+    const relevantClasses: CoachingClass[] = []
+    const jobTitle = job.title.toLowerCase()
+    const jobSkills = job.skills.map(s => s.toLowerCase())
+    const jobCompany = job.company.name.toLowerCase()
+    
+    // Technical classes based on job title and skills
+    allClasses.forEach(cls => {
+      const classTitle = cls.title.toLowerCase()
+      const classDesc = cls.description.toLowerCase()
+      const classCategory = cls.category.toLowerCase()
+      
+      // Check if class is relevant to job
+      const isRelevant = 
+        // Technical relevance
+        (jobTitle.includes('engineer') && (classTitle.includes('tech') || classTitle.includes('software') || classTitle.includes('coding'))) ||
+        (jobTitle.includes('designer') && (classTitle.includes('design') || classTitle.includes('ui') || classTitle.includes('ux'))) ||
+        (jobTitle.includes('analyst') && (classTitle.includes('data') || classTitle.includes('analytics'))) ||
+        (jobTitle.includes('manager') && (classTitle.includes('leadership') || classTitle.includes('management'))) ||
+        // Skill-based relevance
+        jobSkills.some(skill => classDesc.includes(skill) || classTitle.includes(skill)) ||
+        // Category relevance
+        (classCategory === 'technology' && (jobTitle.includes('engineer') || jobTitle.includes('developer') || jobTitle.includes('scientist'))) ||
+        (classCategory === 'leadership' && (jobTitle.includes('manager') || jobTitle.includes('lead') || jobTitle.includes('director'))) ||
+        // Always include soft skill classes
+        classCategory === 'professional development' ||
+        classTitle.includes('networking') ||
+        classTitle.includes('resume') ||
+        classTitle.includes('interview') ||
+        classTitle.includes('communication') ||
+        classTitle.includes('leadership') ||
+        classTitle.includes('networking')
+      
+      if (isRelevant) {
+        relevantClasses.push(cls)
+      }
+    })
+    
+    // If no relevant classes found, return all classes
+    if (relevantClasses.length === 0) {
+      return allClasses
+    }
+    
+    // Always ensure we have soft skill classes mixed in
+    const softSkillClasses = allClasses.filter(cls => 
+      cls.category.toLowerCase() === 'professional development' ||
+      cls.title.toLowerCase().includes('networking') ||
+      cls.title.toLowerCase().includes('resume') ||
+      cls.title.toLowerCase().includes('interview') ||
+      cls.title.toLowerCase().includes('communication') ||
+      cls.title.toLowerCase().includes('leadership')
+    )
+    
+    // Combine relevant technical classes with soft skill classes, avoiding duplicates
+    const combined = [...relevantClasses]
+    softSkillClasses.forEach(softClass => {
+      if (!combined.find(c => c.id === softClass.id)) {
+        combined.push(softClass)
+      }
+    })
+    
+    return combined
+  }
+
+  useEffect(() => {
+    // Load selected job
+    const savedJob = getSelectedJob()
+    if (savedJob) {
+      setSelectedJob(savedJob)
+    }
+  }, [])
 
   useEffect(() => {
     const profile = localStorage.getItem('userProfile')
@@ -415,14 +550,39 @@ export default function CoachingPage() {
 
   const myClasses = getMyClasses()
   const unreadCount = getUnreadCount()
+  
+  // Get relevant classes based on selected job (using the function defined above)
+  const relevantClasses = getRelevantClasses(selectedJob, COACHING_CLASSES)
 
   return (
     <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Career Coaching</h1>
-          <p className="text-sm sm:text-base text-gray-600">Join coaching classes and get personalized advice from expert coaches</p>
+          <p className="text-sm sm:text-base text-gray-600">
+            {selectedJob 
+              ? `Get personalized coaching for ${selectedJob.title} at ${selectedJob.company.name}`
+              : 'Join coaching classes and get personalized advice from expert coaches'}
+          </p>
         </div>
+
+        {/* Selected Job Card */}
+        {selectedJob && (
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-6 mb-6 border-2 border-blue-200">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900">{selectedJob.title}</h2>
+                <p className="text-gray-600 flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  {selectedJob.company.name}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Coaching recommendations tailored for this role
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 sm:mb-8 border-b">
@@ -456,7 +616,7 @@ export default function CoachingPage() {
         {/* Available Classes Tab */}
         {activeTab === 'available' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {COACHING_CLASSES.map((coachingClass) => {
+            {relevantClasses.map((coachingClass) => {
               const isEnrolled = getEnrolledClass(coachingClass.id)
               const isFull = coachingClass.currentStudents >= coachingClass.maxStudents
 

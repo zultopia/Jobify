@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Briefcase, Video, TrendingUp, Building2, BarChart3, User, LogOut, Menu, X, Target } from 'lucide-react'
+import { Briefcase, Video, TrendingUp, BarChart3, User, LogOut, Menu, X, Target } from 'lucide-react'
 
 export default function DashboardLayout({
   children,
@@ -127,7 +127,6 @@ export default function DashboardLayout({
     { icon: Briefcase, title: 'Job Recommendations', href: '/dashboard/jobs', color: 'blue' },
     { icon: Video, title: 'Practice Interview', href: '/dashboard/interview', color: 'purple' },
     { icon: TrendingUp, title: 'Career Coaching', href: '/dashboard/coaching', color: 'green' },
-    { icon: Building2, title: 'Connect to Companies', href: '/dashboard/companies', color: 'orange' },
     { icon: Target, title: 'Progress Tracking', href: '/dashboard/progress', color: 'pink' },
     { icon: User, title: 'Profile', href: '/dashboard/profile', color: 'pink' },
   ]

@@ -2,10 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Video, VideoOff, Clock, CheckCircle, XCircle, Mic, MicOff, Play, Volume2, VolumeX, RotateCw, TrendingUp, Target, Lightbulb, MessageSquare, Eye, AlertCircle, Award, BarChart3, ArrowRight, Sparkles, Zap, BookOpen, FileText } from 'lucide-react'
+import { Video, VideoOff, Clock, CheckCircle, XCircle, Mic, MicOff, Play, Volume2, VolumeX, RotateCw, TrendingUp, Target, Lightbulb, MessageSquare, Eye, AlertCircle, Award, BarChart3, ArrowRight, Sparkles, Zap, BookOpen, FileText, Briefcase, Building2 } from 'lucide-react'
 import { addExp, EXP_REWARDS } from '@/app/utils/gamification'
+import { getSelectedJob, JobRecommendation } from '@/app/utils/jobRecommendations'
 
-const INTERVIEW_QUESTIONS = [
+// Generic interview questions (fallback)
+const GENERIC_INTERVIEW_QUESTIONS = [
   'Tell me about yourself.',
   'Why are you interested in this position?',
   'What are your greatest strengths?',
@@ -15,6 +17,24 @@ const INTERVIEW_QUESTIONS = [
   'Describe a challenging situation you faced and how you handled it.',
   'What motivates you?',
 ]
+
+// Generate job-specific interview questions
+const generateJobSpecificQuestions = (job: JobRecommendation | null): string[] => {
+  if (!job) return GENERIC_INTERVIEW_QUESTIONS
+  
+  return [
+    `Tell me about yourself and why you're interested in ${job.title} at ${job.company.name}.`,
+    `What do you know about ${job.company.name} and our company culture?`,
+    `Why do you want to work as a ${job.title} specifically?`,
+    `How do your skills and experience align with the requirements for this ${job.title} position?`,
+    `Can you describe a project or experience where you used ${job.skills[0] || 'your technical skills'}?`,
+    `What challenges do you think you might face in this role at ${job.company.name}, and how would you handle them?`,
+    `How do you stay updated with the latest trends in ${job.company.industry.toLowerCase()}?`,
+    `Where do you see yourself in 5 years, and how does this ${job.title} role fit into your career goals?`,
+    `What makes you a good fit for ${job.company.name}'s team?`,
+    `Can you give an example of how you've handled a difficult situation in a previous role?`,
+  ]
+}
 
 export default function InterviewPage() {
   const router = useRouter()
@@ -30,11 +50,23 @@ export default function InterviewPage() {
   const [streamReady, setStreamReady] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [ttsEnabled, setTtsEnabled] = useState(true)
+  const [selectedJob, setSelectedJob] = useState<JobRecommendation | null>(null)
+  const [interviewQuestions, setInterviewQuestions] = useState<string[]>(GENERIC_INTERVIEW_QUESTIONS)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null)
+
+  // Load selected job and generate job-specific questions
+  useEffect(() => {
+    const savedJob = getSelectedJob()
+    if (savedJob) {
+      setSelectedJob(savedJob)
+      const questions = generateJobSpecificQuestions(savedJob)
+      setInterviewQuestions(questions)
+    }
+  }, [])
 
   const readQuestion = useCallback((text: string) => {
     // Stop any ongoing speech
@@ -127,7 +159,7 @@ export default function InterviewPage() {
     setAnswers(prev => [...prev, 'Audio response recorded'])
     
     setCurrentQuestionIndex(prev => {
-      if (prev < INTERVIEW_QUESTIONS.length - 1) {
+      if (prev < interviewQuestions.length - 1) {
         return prev + 1
       } else {
         finishInterview()
@@ -137,7 +169,7 @@ export default function InterviewPage() {
     setTimeRemaining(120)
     setCurrentAnswer('')
     setQuestionStarted(false)
-  }, [stopAudioRecording, finishInterview])
+  }, [stopAudioRecording, finishInterview, interviewQuestions])
 
   const startCamera = useCallback(async () => {
     try {
@@ -225,8 +257,8 @@ export default function InterviewPage() {
   }
 
   const replayQuestion = () => {
-    if (INTERVIEW_QUESTIONS[currentQuestionIndex]) {
-      readQuestion(INTERVIEW_QUESTIONS[currentQuestionIndex])
+    if (interviewQuestions[currentQuestionIndex]) {
+      readQuestion(interviewQuestions[currentQuestionIndex])
     }
   }
 
@@ -276,17 +308,17 @@ export default function InterviewPage() {
 
   // Read question aloud when it changes
   useEffect(() => {
-    if (isInterviewing && INTERVIEW_QUESTIONS[currentQuestionIndex] && ttsEnabled) {
+    if (isInterviewing && interviewQuestions[currentQuestionIndex] && ttsEnabled) {
       // Small delay to ensure UI is updated
       const timer = setTimeout(() => {
-        readQuestion(INTERVIEW_QUESTIONS[currentQuestionIndex])
+        readQuestion(interviewQuestions[currentQuestionIndex])
       }, 500)
       return () => {
         clearTimeout(timer)
         window.speechSynthesis.cancel()
       }
     }
-  }, [currentQuestionIndex, isInterviewing, ttsEnabled, readQuestion])
+  }, [currentQuestionIndex, isInterviewing, ttsEnabled, readQuestion, interviewQuestions])
 
   const startInterview = () => {
     setIsInterviewing(true)
@@ -315,7 +347,7 @@ export default function InterviewPage() {
   }
 
   const generateReport = () => {
-    const totalQuestions = INTERVIEW_QUESTIONS.length
+    const totalQuestions = interviewQuestions.length
     const answeredQuestions = answers.length
     const completionRate = (answeredQuestions / totalQuestions) * 100
     
@@ -416,7 +448,7 @@ export default function InterviewPage() {
       communicationScore: Math.round(overallScore * 0.9),
       contentScore: Math.round(overallScore * 0.85),
       confidenceScore: Math.round(overallScore * 1.1),
-      questionAnalysis: INTERVIEW_QUESTIONS.map((question, index) => ({
+      questionAnalysis: interviewQuestions.map((question, index) => ({
         question,
         answered: index < answeredQuestions,
         score: index < answeredQuestions ? Math.round(overallScore + (Math.random() * 20 - 10)) : 0,
@@ -478,16 +510,43 @@ export default function InterviewPage() {
   const report = showReport ? generateReport() : null
 
   return (
-    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-gradient-to-br from-gray-50 via-white to-blue-50/30">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">AI Interview Practice</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            {selectedJob 
+              ? `Practice interview questions for ${selectedJob.title} at ${selectedJob.company.name}`
+              : 'Practice your interview skills with AI-powered mock interviews'}
+          </p>
+        </div>
+
+        {/* Selected Job Card */}
+        {selectedJob && (
+          <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl shadow-xl p-6 mb-6 border-2 border-blue-200">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900">{selectedJob.title}</h2>
+                <p className="text-gray-600 flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  {selectedJob.company.name}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Interview questions tailored for this role and company
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {!isInterviewing && !showReport && (
           <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 md:p-12 text-center">
             <Video className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600 mx-auto mb-4 sm:mb-6" />
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Practice Interview</h1>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Practice Interview</h2>
             <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto px-2">
-              Practice your interview skills with AI-powered mock interviews. You'll be asked common interview questions 
-              and receive detailed feedback on your performance.
+              {selectedJob 
+                ? `Practice interview questions specifically tailored for ${selectedJob.title} at ${selectedJob.company.name}.`
+                : "Practice your interview skills with AI-powered mock interviews. You'll be asked common interview questions and receive detailed feedback on your performance."}
             </p>
             <button
               onClick={startInterview}
@@ -530,7 +589,7 @@ export default function InterviewPage() {
                 <div className="mb-4 sm:mb-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
                     <span className="text-xs sm:text-sm text-gray-600">
-                      Question {currentQuestionIndex + 1} of {INTERVIEW_QUESTIONS.length}
+                      Question {currentQuestionIndex + 1} of {interviewQuestions.length}
                     </span>
                     <div className="flex items-center gap-2 sm:gap-3">
                       {isSpeaking && (
@@ -549,7 +608,7 @@ export default function InterviewPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
                     <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 flex-1">
-                      {INTERVIEW_QUESTIONS[currentQuestionIndex]}
+                      {interviewQuestions[currentQuestionIndex]}
                     </h2>
                     <div className="flex items-center gap-2 self-start sm:self-auto">
                       <button
@@ -619,7 +678,7 @@ export default function InterviewPage() {
 
                 {questionStarted && (
                   <div className="flex gap-3 sm:gap-4">
-                    {currentQuestionIndex < INTERVIEW_QUESTIONS.length - 1 ? (
+                    {currentQuestionIndex < interviewQuestions.length - 1 ? (
                       <button
                         onClick={handleNextQuestion}
                         className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition text-sm sm:text-base"
